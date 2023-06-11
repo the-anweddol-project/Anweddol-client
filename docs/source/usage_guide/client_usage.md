@@ -30,14 +30,14 @@ A container can take some time to create depending of the server's capacities, w
 When the response is received, grab the new created credentials entry ID and execute : 
 
 ```
-$ anwdlclient cred -p <entry_id>
+$ anwdlclient container -p <entry_id>
 ```
 
-to get the clear session and container SSH credentials to use.
+to get the clear container SSH credentials to use.
 Next, you can eventually establish a shell to it : 
 
 ```
-$ ssh <container_username>@156.45.5.1 -p <container_listen_port>
+$ ssh <container_username>@<container_ip> -p <container_listen_port>
 ```
 
 Copy and paste the password, and you have now a shell on the container.

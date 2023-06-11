@@ -16,7 +16,7 @@ None
 verifyResponseContent(response_dict: dict) -> tuple
 ```
 
-> Check if a response dictionary is a valid normalized [Response format]()
+> Check if a response dictionary is a valid normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
 
 _Parameters_ :
 
@@ -33,7 +33,7 @@ _Return value_ :
 )
 ```
 
-if the `response_dict` is a valid normalized [Response format](), 
+if the `response_dict` is a valid normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format), 
 
 ```
 (
@@ -44,7 +44,7 @@ if the `response_dict` is a valid normalized [Response format](),
 
 otherwise.
 
-- `sanitized_response_dictionary` : The sanitized response as a normalized [Response format]() dictionary.
+- `sanitized_response_dictionary` : The sanitized response as a normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format) dictionary.
 - `errors_dictionary` : A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
 **NOTE** : The method `verifyResponseContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (See the technical specifications [Sanitization section]() to learn more).
@@ -55,7 +55,7 @@ otherwise.
 makeRequest(verb: str, parameters: dict = {}) -> tuple:
 ```
 
-> Make a normalized [Request format]() dictionary
+> Make a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary
 
 _Parameters_ :
 
@@ -64,7 +64,7 @@ _Parameters_ :
 
 _Return value_ : 
 
-- A tuple representing a valid [Request format]() dictionary : 
+- A tuple representing a valid [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary : 
 
 ```
 (
@@ -84,7 +84,7 @@ if the operation succeeded,
 
 otherwise.
 
-- `request_dictionary` : The request dictionary as a normalized [Request format]().
+- `request_dictionary` : The request dictionary as a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format).
 - `errors_dictionary` : A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
 **NOTE** : The `sendRequest` method from `ClientInterface` wraps this function in its process. Like `verifyResponseContent`, the method only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.

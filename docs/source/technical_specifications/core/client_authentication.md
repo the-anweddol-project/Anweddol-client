@@ -15,7 +15,7 @@ There is 2 affiliated members :
 - The container UUID ;
 - The client token ;
 
-The container UUID is the [UUID of the container](tech specs, management) that the client wants to destroy.
+The container UUID is the [UUID of the container](https://anweddol-server.readthedocs.io/en/latest/technical_specifications/core/virtualization.html#management) that the client wants to destroy.
 
 The client token is a private token given to the client when a container is created on receipt of a CREATE request, to ensure that the client who wants to destroy the container in question is actually the one who owns it. A token is a 255-character url-safe string, to guarantee minimum usurpability.
 

@@ -176,7 +176,7 @@ _Possible raise classes_ :
 
 - `RuntimeError`
 
-**NOTE** : When this method is called, the RSA and AES keys will be automatically exchanged (see the technical specifications [Communication section]()).
+**NOTE** : When this method is called, the RSA and AES keys will be automatically exchanged (see the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#encryption)).
 
 ---
 
@@ -272,7 +272,7 @@ sendRequest(verb: str, parameters: dict = {}) -> None
 _Parameters_ : 
 
 - `verb` : The verb to send
-- `parameters` : The parameters dictionary to send. The content must be an empty dict or a normalized [Request format]() dictionary.
+- `parameters` : The parameters dictionary to send. The content must be an empty dict or a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary.
 
 _Return value_ :
 
@@ -297,7 +297,7 @@ _Parameters_ :
 
 _Return value_ :
 
-- The received response  as a normalized [Response format]() dictionary
+- The received response  as a normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format) dictionary
 
 _Possible raise classes_ :
 

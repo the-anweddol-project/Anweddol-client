@@ -30,7 +30,7 @@ maxdepth: 3
 includehidden:
 ---
 
-authentication
+access_token
 ```
 
 ```{toctree}

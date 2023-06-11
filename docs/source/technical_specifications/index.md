@@ -29,18 +29,17 @@ core/communication
 
 ```{toctree}
 ---
-maxdepth: 3
+maxdepth: 2
 includehidden:
 ---
 
-tools/accesstk
+tools/access_token
 ```
 
 ```{toctree}
 ---
-maxdepth: 3
+maxdepth: 2
 includehidden:
 ---
 
 tools/credentials
-```

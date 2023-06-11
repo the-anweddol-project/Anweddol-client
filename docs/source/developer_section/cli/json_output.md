@@ -57,8 +57,8 @@ When an error occured during the process with any `--json` parameter set with su
 }
 ```
 
-- `MESSAGE` : The received [response message](communication section)
-- `SERVER_RESPONSE_DATA_DICTIONARY` : The `data` dictionary of the received request as described in the technical specifications [Communication section](communication section).
+- `MESSAGE` : The received [response message](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
+- `SERVER_RESPONSE_DATA_DICTIONARY` : The `data` dictionary of the received request as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
 
 ### `destroy` sub-command
 
@@ -74,7 +74,7 @@ When an error occured during the process with any `--json` parameter set with su
 }
 ```
 
-- `MESSAGE` : The received [response message](communication section)
+- `MESSAGE` : The received [response message](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
 
 ### `stat` sub-command
 
@@ -91,8 +91,8 @@ When an error occured during the process with any `--json` parameter set with su
 }
 ```
 
-- `MESSAGE` : The received [response message](communication section)
-- `SERVER_RESPONSE_DATA_DICTIONARY` : The `data` dictionary of the received request as described in the technical specifications [Communication section](communication section).
+- `MESSAGE` : The received [response message](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
+- `SERVER_RESPONSE_DATA_DICTIONARY` : The `data` dictionary of the received request as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
 
 ### `session` sub-command
 

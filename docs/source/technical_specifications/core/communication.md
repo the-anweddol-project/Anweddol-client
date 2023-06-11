@@ -10,11 +10,11 @@ Requests and responses sent between the client and the server are JSON structure
 
 Before sending anything to a peer, the size of the packet is sent in an 8 byte message, padded with '=' characters : 
 
-| Message       | Length        | Padded message length     |
-| ------------- | ------------- |-------------------------- |
-| `"hello world"`| 11 characters | `"11======"` (8 characters) |
+| Message         | Length        | Padded message length       |
+| --------------- | ------------- |---------------------------- |
+| `"hello world"` | 11 characters | `"11======"` (8 characters) |
 
-Thus, the theorical maximum packet size  is 99 999 999 bytes.
+Thus, the native theorical maximum packet size is 99 999 999 bytes.
 
 ## Request format
 
@@ -39,7 +39,7 @@ Here is a typical request structure that a client will send :
 
 -> `PARAMETERS` : This is the section reserved for any kind of parameters used to provide additional information in a request.
 
-> Only the `"DESTROY"` request requires some parameters to authenticate the client (see the [Authentication](Authentication) section to learn more).
+> Only the `"DESTROY"` request requires some parameters to authenticate the client (see the [Authentication](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html) section to learn more).
 
 ## Response format
 
@@ -72,14 +72,14 @@ When an error occurs during the processing of a request on the server side, a me
 
 Here is a non-exhaustive list of status codes and their messages : 
 
-|Message|Meaning|
-|---------|---------|
-|"OK"| The request was successfully satisfied
-|"Bad authentication"| The sender specified invalid credentials
-|"Bad request"| The previous request was malformed
-|"Refused request"| The request was refused
-|"Unavailable"| The server is currently unavailable
- |"Internal error"| The server is experiencing an internal error
+|Message                | Meaning                                      |
+|---------------------- | -------------------------------------------- |
+|`"OK"`                 | The request was successfully satisfied       |
+|`"Bad authentication"` | The sender specified invalid credentials     |
+|`"Bad request"`        | The previous request was malformed           |
+|`"Refused request"`    | The request was refused                      |
+|`"Unavailable"`        | The server is currently unavailable          |
+|`"Internal error"`     | The server is experiencing an internal error |
 
 Note that messages depicting an error may come with an additional explanation of why the error occurred : 
 
@@ -98,19 +98,21 @@ RSA keys length is 4096 bytes. The RSA implementation is used to send the connec
 
 Here is a visual example of how the keys are exchanged with a server : 
 
-> Bold and italic text mean RSA encrypted text
+> Bold text mean RSA encrypted text
 
-| A | packet content | B |
-|---|--------|---|
-|->| connexion|o|
-|->| A RSA public key |o|
-|o|validation|<-|
-|o|B RSA public Key|<-|
-|->|validation|o|
-|->| ***A AES Key***|o|
-|o|validation|<-|
-|o|***B AES Key*** |<-|
-|->|validation|o|
+> '>'/'<' symbol means 'send' and 'o' symbol means 'receive'
+
+| A | packet content   | B |
+|---|------------------|---|
+|>  | connexion        |o  |
+|>  | A RSA public key |o  |
+|o  | validation       |<  |
+|o  | B RSA public Key |<  |
+|>  | validation       |o  |
+|>  | **A AES Key**    |o  |
+|o  | validation       |<  |
+|o  | **B AES Key**    |<  |
+|>  | validation       |o  | 
 
 *'->' symbol means 'send'  and 'o' symbol means 'receive'* 
 
