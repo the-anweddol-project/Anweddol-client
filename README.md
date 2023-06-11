@@ -33,7 +33,7 @@ $ pip install anwdlclient
 Or from sources : 
 ```
 $ git clone https://github.com/the-anweddol-project/Anweddol-client.git
-$ cd anweddol_client-v1.0.0
+$ cd Anweddol-client
 $ pip install .
 ```
 
