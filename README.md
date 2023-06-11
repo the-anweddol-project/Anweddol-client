@@ -1,7 +1,6 @@
 # Anweddol-client
 
 [![made-with-python](https://img.shields.io/badge/Made%20with-Python-important)](https://www.python.org/)
-[![build-passing](https://img.shields.io/badge/build-passing-green.svg)](https://shields.io/)
 [![license](https://img.shields.io/badge/license-GPLv3-blue.svg)](https://shields.io/)
 [![reddit](https://img.shields.io/reddit/subreddit-subscribers/Anweddol?style=social)](https://www.reddit.com/r/Anweddol/)
 
@@ -51,9 +50,9 @@ to get the help page.
 
 ## Documentation
 
-You can retrieve the user guide on the [readthedocs page]()
+You can retrieve the user guide on the [readthedocs page](https://anweddol-client.readthedocs.io/en/latest/usage_guide/index.html).
 
-See also the Anweddol client API references on the client [Developper documentation]() page.
+See also the Anweddol client API references on the client [Developper documentation](https://anweddol-client.readthedocs.io/en/latest/developer_section/index.html) page.
 
 ## Bugs & New ideas
 
