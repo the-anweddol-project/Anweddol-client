@@ -1,7 +1,7 @@
 # Client usage
 ---
 
-> You need to follows the [Prerequisites](Prerequisites.md) section before continuing this tutorial.
+> You need to follows the [Installation](installation) section before continuing this tutorial.
 
 Here is a typical tutorial on how to interact with a server, here 156.45.5.1.
 

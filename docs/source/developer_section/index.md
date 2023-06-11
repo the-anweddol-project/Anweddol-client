@@ -23,6 +23,15 @@ includehidden:
 examples/basic_client
 ```
 
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+examples/custom_verb_usage
+```
+
 ## API references
 
 Learn about every features that the `core` can provide.

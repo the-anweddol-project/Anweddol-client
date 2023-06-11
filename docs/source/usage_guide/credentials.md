@@ -5,7 +5,7 @@ Natively, there is 2 types of credentials :
 - The session credentials ;
 - The container SSH credentials ;
 
-The Anweddol server CLI providing token authentication, a third one adds up : the authentication token credentials (see [Authentication](Authentication) section to learn more).
+The Anweddol server CLI providing token authentication, a third one adds up : the authentication token credentials (see the [Access token](access_token) section to learn more).
 
 ## Listing credentials entries
 

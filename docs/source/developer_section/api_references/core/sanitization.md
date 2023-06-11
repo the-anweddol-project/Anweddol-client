@@ -47,7 +47,7 @@ otherwise.
 - `sanitized_response_dictionary` : The sanitized response as a normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format) dictionary.
 - `errors_dictionary` : A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
-**NOTE** : The method `verifyResponseContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (See the technical specifications [Sanitization section]() to learn more).
+**NOTE** : The method `verifyResponseContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (See the technical specifications [Sanitization section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#sanitization) to learn more).
 
 ---
 
@@ -60,7 +60,7 @@ makeRequest(verb: str, parameters: dict = {}) -> tuple:
 _Parameters_ :
 
 - `verb` : The verb to send
-- `parameters` : The parameters to send. The content must be an empty dict or a normalized [Request format]().
+- `parameters` : The parameters to send. The content must be an empty dict or a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format).
 
 _Return value_ : 
 
