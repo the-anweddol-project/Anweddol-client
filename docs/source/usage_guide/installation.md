@@ -1,13 +1,7 @@
 # Installation
 ---
 
-Install the Anweddol client implementation with pip : 
-
-```
-$ pip install anwdlclient
-```
-
-Or by the sources : 
+Install the Anweddol client by the sources : 
 
 ```
 $ git clone https://github.com/the-anweddol-project/Anweddol-client.git
