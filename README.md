@@ -34,7 +34,7 @@ $ pip install anwdlclient
 
 On windows : 
 ```
-$ py -m pip install anwdlserver
+$ py -m pip install anwdlclient
 ```
 
 ### Source installation
