@@ -18,60 +18,65 @@ ACTUAL_VERSION = "1.1.0"
 def executeCommand(command):
     Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
 
-
-anweddol_base_path = (
-    f"C:\\Users\\{getpass.getuser()}\\Anweddol\\"
-    if os.name == "nt"
-    else f"/home/{getpass.getuser()}/.anweddol/"
-)
-local_ifs = "\\" if os.name == "nt" else "/"
-
-print("[SETUP] Creating base folder ...")
-if not os.path.exists(anweddol_base_path):
-    os.mkdir(anweddol_base_path)
-
-print("[SETUP] Creating configuration file ...")
-if os.path.exists(anweddol_base_path + "config.yaml"):
-    os.remove(anweddol_base_path + "config.yaml")
-
-# Replace arbitrary values in the resource config file before copy it on the system
-with open(
-    f"{os.path.dirname(os.path.realpath(__file__))}{local_ifs}resources{local_ifs}config.yaml",
-    "r",
-) as fd:
-    data = (
-        fd.read()
-        .replace(
-            "session_credentials_path",
-            anweddol_base_path + f"credentials{local_ifs}session_credentials.db",
-        )
-        .replace(
-            "container_credentials_path",
-            anweddol_base_path + f"credentials{local_ifs}container_credentials.db",
-        )
-        .replace(
-            "access_token_path",
-            anweddol_base_path + f"credentials{local_ifs}access_token.db",
-        )
-        .replace("rsa_keys_path", anweddol_base_path + f"rsa_keys{local_ifs}")
+try:
+    anweddol_base_path = (
+        f"C:\\Users\\{getpass.getuser()}\\Anweddol\\"
+        if os.name == "nt"
+        else f"/home/{getpass.getuser()}/.anweddol/"
     )
+    local_ifs = "\\" if os.name == "nt" else "/"
 
-    with open(anweddol_base_path + "config.yaml", "w") as fd:
-        fd.write(data)
+    print("[SETUP] Creating base folder ...")
+    if not os.path.exists(anweddol_base_path):
+        os.mkdir(anweddol_base_path)
 
-print("[SETUP] Creating uninstallation script ...")
-if os.name == "nt":
-    shutil.copy(
-        os.path.dirname(os.path.realpath(__file__)) + "\\anwdlclient-uninstall",
-        anweddol_base_path,
-    )
+    print("[SETUP] Creating configuration file ...")
+    if os.path.exists(anweddol_base_path + "config.yaml"):
+        os.remove(anweddol_base_path + "config.yaml")
 
-else:
-    shutil.copy(
-        os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
-        f"/home/{getpass.getuser()}/.local/bin/",
-    )
-    executeCommand(f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall")
+    # Replace arbitrary values in the resource config file before copy it on the system
+    with open(
+        f"{os.path.dirname(os.path.realpath(__file__))}{local_ifs}resources{local_ifs}config.yaml",
+        "r",
+    ) as fd:
+        data = (
+            fd.read()
+            .replace(
+                "session_credentials_path",
+                anweddol_base_path + f"credentials{local_ifs}session_credentials.db",
+            )
+            .replace(
+                "container_credentials_path",
+                anweddol_base_path + f"credentials{local_ifs}container_credentials.db",
+            )
+            .replace(
+                "access_token_path",
+                anweddol_base_path + f"credentials{local_ifs}access_token.db",
+            )
+            .replace("rsa_keys_path", anweddol_base_path + f"rsa_keys{local_ifs}")
+        )
+
+        with open(anweddol_base_path + "config.yaml", "w") as fd:
+            fd.write(data)
+
+    print("[SETUP] Creating uninstallation script ...")
+    if os.name == "nt":
+        shutil.copy(
+            os.path.dirname(os.path.realpath(__file__)) + "\\anwdlclient-uninstall",
+            anweddol_base_path,
+        )
+
+    else:
+        shutil.copy(
+            os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
+            f"/home/{getpass.getuser()}/.local/bin/",
+        )
+        executeCommand(f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall")
+
+except Exception as E:
+    # For Github actions build phase :[
+    print(f"[SETUP] An error occured during setup : {E}")
+    print(f"[SETUP] Passing ... ")
 
 print("[SETUP] Installing Anweddol client ...")
 setup(
