@@ -12,7 +12,7 @@ import getpass
 import shutil
 import os
 
-ACTUAL_VERSION = "1.1.0"
+ACTUAL_VERSION = "1.1.1"
 
 
 def executeCommand(command):
@@ -71,7 +71,9 @@ else:
         os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
         f"/home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall",
     )
-    executeCommand(f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall")
+    executeCommand(
+        f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall"
+    )
 
 print("[SETUP] Installing Anweddol client ...")
 setup(
@@ -93,5 +95,5 @@ setup(
     url="https://github.com/the-anweddol-project/Anweddol-client",
     packages=["anwdlclient", "anwdlclient.core", "anwdlclient.tools"],
     install_requires=["cryptography", "cerberus", "pyyaml"],
-    include_package_data=True
+    include_package_data=True,
 )

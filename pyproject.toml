@@ -7,7 +7,7 @@ packages = ["anwdlclient", "anwdlclient.core", "anwdlclient.tools"]
 
 [project]
 name = "anwdlclient"
-version = "1.1.0"
+version = "1.1.1"
 description = "The Anweddol client implementation"
 authors = [
   { name="The Anweddol project", email="the-anweddol-project@proton.me" },
