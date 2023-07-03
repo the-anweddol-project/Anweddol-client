@@ -25,11 +25,22 @@ To get the server source code, see the [Anweddol server repository](https://gith
 
 ## Installation
 
-Install the client by the sources : 
+Clone the client source code repository : 
 ```
 $ git clone https://github.com/the-anweddol-project/Anweddol-client.git
-$ cd Anweddol-client
+$ cd anweddol_client-v1.0.0
+```
+
+Install it with pip (linux):
+
+```
 $ pip install .
+```
+
+(Windows) : 
+
+```
+$ py -m pip install . 
 ```
 
 ## Configuration
@@ -60,13 +71,6 @@ Open a ticket on the [issue page](https://github.com/the-anweddol-project/Anwedd
 This software is under the GNU general public license v3, available under any later version.
 
 This is free software: you are free to change and redistribute it. There is NO WARRANTY, to the extent permitted by law.
-
-## Contact
-
-See the Anweddol community pages : 
-
-- Anweddol [reddit community page](https://www.reddit.com/r/Anweddol)
-- Join the Anweddol [Zulip organization](https://anweddol.zulipchat.com)
 
 ## Developper / Maintainers list
 

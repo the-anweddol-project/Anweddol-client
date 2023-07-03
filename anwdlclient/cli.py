@@ -49,11 +49,6 @@ CONFIG_FILE_PATH = (
     else f"/home/{os.getlogin()}/.anweddol/config.yaml"
 )
 
-LOG_START_ERROR = "x>"
-LOG_START_INFO = "i>"
-LOG_START_WARNING = "!>"
-LOG_START_SUCCESS = "+>"
-
 LOG_JSON_STATUS_SUCCESS = "OK"
 LOG_JSON_STATUS_ERROR = "ERROR"
 
@@ -75,7 +70,7 @@ class MainAnweddolClientCLI:
 
             if not self.config_content[0]:
                 print(
-                    "!> Error in configuration file :\n",
+                    "Error in configuration file :\n",
                     file=sys.stderr,
                 )
                 print(json.dumps(self.config_content[1], indent=4), file=sys.stderr)
@@ -136,7 +131,7 @@ please report it by opening an issue on the repository :
                 )
 
             else:
-                self.__log(LOG_START_ERROR, f"Error : {E}")
+                self.__log_stdout(f"Error : {E}\n")
 
             exit(-1)
 
@@ -211,33 +206,24 @@ please report it by opening an issue on the repository :
                 ) as fd:
                     self.runtime_rsa_wrapper.setPrivateKey(fd.read().encode())
 
-    def __log(self, start=None, message="", tabulation=False, bypass=False):
-        if bypass:
-            return
-
-        print(
-            ("    " if tabulation else "")
-            + (("\n" + start + " ") if start else "")
-            + message
-            + ("\n" if start else ""),
-            file=sys.stderr
-            if (start == LOG_START_ERROR or start == LOG_START_WARNING)
-            else sys.stdout,
-        )
+    def __log_stdout(self, message, bypass=False):
+        if not bypass:
+            print(message)
 
     def __log_json(self, status, message, data={}):
         print(json.dumps({"status": status, "message": message, "data": data}))
 
-    def __create_file_recursively(self, file_path, dir_folder_only=False):
+    def __create_file_recursively(self, path, is_folder=False):
         try:
-            os.makedirs(os.path.dirname(file_path))
+            os.makedirs(os.path.dirname(path) if not is_folder else path)
+
         except FileExistsError:
             pass
 
-        if dir_folder_only:
+        if is_folder:
             return
 
-        with open(file_path, "w") as fd:
+        with open(path, "w") as fd:
             fd.close()
 
     def create(self):
@@ -269,13 +255,29 @@ please report it by opening an issue on the repository :
         self.__load_rsa_keys()
 
         if not isValidIP(args.ip):
-            raise ValueError("Parameter 'ip' must be a IPv4 ip format")
+            if args.json:
+                self.__log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    f"'{args.ip}' is not a valid IPv4 ip format",
+                )
+                return
+
+            self.__log_stdout(f"'{args.ip}' is not a valid IPv4 ip format\n")
+            return
 
         if args.port:
             if args.port >= 65535 or args.port <= 0:
-                raise ValueError(
-                    "Parameter 'port' must be a non-zero integer, and less than 65535"
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        f"'{args.port}' is not a non-zero integer less than 65535",
+                    )
+                    return
+
+                self.__log_stdout(
+                    f"'{args.port}' is not a non-zero integer less than 65535\n"
                 )
+                return
 
         if not os.path.exists(self.config_content.get("access_token_db_file_path")):
             self.__create_file_recursively(
@@ -313,14 +315,8 @@ please report it by opening an issue on the repository :
         )
 
         try:
-            self.__log(
-                message=f"Establishing connection with {args.ip}:{args.port if args.port else DEFAULT_SERVER_LISTEN_PORT} ...",
-                bypass=args.json,
-            )
-
             client.connectServer()
 
-            self.__log(message="Sending CREATE request ...", bypass=args.json)
             request_parameters = {}
 
             for entries in access_token_manager.listEntries():
@@ -331,60 +327,64 @@ please report it by opening an issue on the repository :
 
             client.sendRequest(REQUEST_VERB_CREATE, parameters=request_parameters)
 
-            self.__log(
-                message="Waiting for response (can take some time, please wait) ...",
-                bypass=args.json,
-            )
             resp = client.recvResponse()
             client.closeConnection()
 
             if not resp[0]:
-                raise RuntimeError(
-                    f"Received invalid response : {json.dumps(resp[1], indent=4)}"
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Received invalid response",
+                        data={"error_dict": resp[1]},
+                    )
+                    return
+
+                self.__log_stdout(
+                    f"Received invalid response : {json.dumps(resp[1], indent=4)}\n"
                 )
+                return
 
             if not resp[1]["success"]:
-                raise RuntimeError(f"Failed to create container : {resp[1]['message']}")
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Failed to create container",
+                        data={"response": resp[1]},
+                    )
+                    return
 
-            self.__log(
-                LOG_START_SUCCESS, "Container successfully created", bypass=args.json
-            )
-            self.__log(
-                message=f"Message : {resp[1]['message']}",
-                tabulation=True,
-                bypass=args.json,
-            )
-            self.__log(
-                message=f"Container ISO checksum : {resp[1]['data'].get('container_iso_sha256')}",
-                tabulation=True,
+                self.__log_stdout(
+                    f"Failed to create container : {resp[1]['message']}\n"
+                )
+                return
+
+            self.__log_stdout("Container successfully created", bypass=args.json)
+            self.__log_stdout(f" ↳ Message : {resp[1]['message']}", bypass=args.json)
+            self.__log_stdout(
+                f" ↳ Container ISO checksum : {resp[1]['data'].get('container_iso_sha256')}",
                 bypass=args.json,
             )
 
             if args.show_credentials:
-                self.__log(LOG_START_INFO, "Session credentials :", bypass=args.json)
-                self.__log(
-                    message=f"Container UUID : {resp[1]['data'].get('container_uuid')}",
-                    tabulation=True,
+                self.__log_stdout("Session credentials :", bypass=args.json)
+                self.__log_stdout(
+                    f" ↳ Container UUID : {resp[1]['data'].get('container_uuid')}",
                     bypass=args.json,
                 )
-                self.__log(
-                    message=f"Client token : {resp[1]['data'].get('client_token')}",
-                    tabulation=True,
+                self.__log_stdout(
+                    f" ↳ Client token : {resp[1]['data'].get('client_token')}",
                     bypass=args.json,
                 )
-                self.__log(
-                    message=f"Container username : {resp[1]['data'].get('container_username')}",
-                    tabulation=True,
+                self.__log_stdout(
+                    f" ↳ Container username : {resp[1]['data'].get('container_username')}",
                     bypass=args.json,
                 )
-                self.__log(
-                    message=f"Container password : {resp[1]['data'].get('container_password')}",
-                    tabulation=True,
+                self.__log_stdout(
+                    f" ↳ Container password : {resp[1]['data'].get('container_password')}",
                     bypass=args.json,
                 )
-                self.__log(
-                    message=f"Container listen port : {resp[1]['data'].get('container_listen_port')}\n",
-                    tabulation=True,
+                self.__log_stdout(
+                    f" ↳ Container listen port : {resp[1]['data'].get('container_listen_port')}\n",
                     bypass=args.json,
                 )
 
@@ -428,14 +428,11 @@ please report it by opening an issue on the repository :
 
                 return
 
-            self.__log(
-                message=f"Session credentials was stored with ID {new_session_credentials_entry_tuple[0]}",
-                tabulation=True,
+            self.__log_stdout(
+                f"Session credentials was stored with ID {new_session_credentials_entry_tuple[0]}",
             )
-
-            self.__log(
-                message=f"Container credentials was stored with ID {new_container_credentials_entry_tuple[0]}\n",
-                tabulation=True,
+            self.__log_stdout(
+                f"Container credentials was stored with ID {new_container_credentials_entry_tuple[0]}\n",
             )
 
         except Exception as E:
@@ -501,24 +498,22 @@ please report it by opening an issue on the repository :
         client = None
 
         try:
-            self.__log(
-                message=f"Fetching session credentials ID '{args.session_entry_id}' ...",
-                bypass=args.json,
-            )
-
             credentials_content = session_credentials_manager.getEntry(
                 args.session_entry_id
             )
 
             if not credentials_content:
-                raise LookupError(
-                    f"Session ID '{args.session_entry_id}' does not exists"
-                )
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        f"Session ID '{args.session_entry_id}' does not exists",
+                    )
+                    return
 
-            self.__log(
-                message=f"Establishing connection with {credentials_content[2]}:{credentials_content[3]} ...",
-                bypass=args.json,
-            )
+                self.__log_stdout(
+                    f"Session ID '{args.session_entry_id}' does not exists\n"
+                )
+                return
 
             client = ClientInterface(
                 credentials_content[2],
@@ -526,7 +521,6 @@ please report it by opening an issue on the repository :
                 rsa_wrapper=self.runtime_rsa_wrapper,
             )
 
-            self.__log(message="Sending DESTROY request ...", bypass=args.json)
             request_parameters = {
                 "container_uuid": credentials_content[4],
                 "client_token": credentials_content[5],
@@ -540,19 +534,36 @@ please report it by opening an issue on the repository :
 
             client.sendRequest(REQUEST_VERB_DESTROY, parameters=request_parameters)
 
-            self.__log(message="Waiting for response ...", bypass=args.json)
             resp = client.recvResponse()
             client.closeConnection()
 
             if not resp[0]:
-                raise RuntimeError(
-                    f"Received invalid response : \n{json.dumps(resp[1], indent=4)}"
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Received invalid response",
+                        data={"error_dict": resp[1]},
+                    )
+                    return
+
+                self.__log_stdout(
+                    f"Received invalid response : {json.dumps(resp[1], indent=4)}\n"
                 )
+                return
 
             if not resp[1]["success"]:
-                raise RuntimeError(
-                    f"Failed to destroy container : {resp[1]['message']}"
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Failed to destroy container",
+                        data={"response": resp[1]},
+                    )
+                    return
+
+                self.__log_stdout(
+                    f"Failed to destroy container : {resp[1]['message']}\n"
                 )
+                return
 
             if not args.do_not_delete:
                 session_credentials_manager.deleteEntry(args.session_entry_id)
@@ -574,14 +585,10 @@ please report it by opening an issue on the repository :
                     "Container successfully destroyed",
                     data={"message": resp[1]["message"]},
                 )
-
                 return
 
-            self.__log(LOG_START_SUCCESS, "Container successfully destroyed")
-            self.__log(
-                message=f"Message : {resp[1]['message']}",
-                tabulation=True,
-            )
+            self.__log_stdout("Container successfully destroyed")
+            self.__log_stdout(f" ↳ Message : {resp[1]['message']}\n")
 
         except Exception as E:
             if client and not client.isClosed():
@@ -616,13 +623,29 @@ Get the actual server uptime and the available containers left amount.""",
         self.__load_rsa_keys()
 
         if not isValidIP(args.ip):
-            raise ValueError("Parameter 'ip' must be a IPv4 ip format")
+            if args.json:
+                self.__log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    f"'{args.ip}' is not a valid IPv4 ip format",
+                )
+                return
+
+            self.__log_stdout(f"'{args.ip}' is not a valid IPv4 ip format\n")
+            return
 
         if args.port:
-            if int(args.port) >= 65535 or int(args.port) <= 0:
-                raise ValueError(
-                    "Parameter 'port' must be a non-zero integer, and less than 65535"
+            if args.port >= 65535 or args.port <= 0:
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        f"'{args.port}' is not a non-zero integer less than 65535",
+                    )
+                    return
+
+                self.__log_stdout(
+                    f"'{args.port}' is not a non-zero integer less than 65535\n"
                 )
+                return
 
         if not os.path.exists(self.config_content.get("access_token_db_file_path")):
             self.__create_file_recursively(
@@ -640,13 +663,8 @@ Get the actual server uptime and the available containers left amount.""",
         )
 
         try:
-            self.__log(
-                message=f"Establishing connection with {args.ip}:{args.port if args.port else DEFAULT_SERVER_LISTEN_PORT} ...",
-                bypass=args.json,
-            )
             client.connectServer()
 
-            self.__log(message="Sending STAT request ...", bypass=args.json)
             request_parameters = {}
 
             for entries in access_token_manager.listEntries():
@@ -657,17 +675,34 @@ Get the actual server uptime and the available containers left amount.""",
 
             client.sendRequest(REQUEST_VERB_STAT, parameters=request_parameters)
 
-            self.__log(message="Waiting for response ...", bypass=args.json)
             resp = client.recvResponse()
             client.closeConnection()
 
             if not resp[0]:
-                raise RuntimeError(
-                    f"Received invalid response : \n{json.dumps(resp[1], indent=4)}"
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Received invalid response",
+                        data={"error_dict": resp[1]},
+                    )
+                    return
+
+                self.__log_stdout(
+                    f"Received invalid response : {json.dumps(resp[1], indent=4)}\n"
                 )
+                return
 
             if not resp[1]["success"]:
-                raise RuntimeError(f"Failed to stat server : {resp[1]['message']}")
+                if args.json:
+                    self.__log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Failed to stat server",
+                        data={"response": resp[1]},
+                    )
+                    return
+
+                self.__log_stdout(f"Failed to stat server : {resp[1]['message']}\n")
+                return
 
             if args.json:
                 data_dict = {"message": resp[1]["message"]}
@@ -678,17 +713,12 @@ Get the actual server uptime and the available containers left amount.""",
                     "Server statistics",
                     data=data_dict,
                 )
-
                 return
 
-            self.__log(LOG_START_SUCCESS, "Server statistics :")
-            self.__log(
-                message=f"Uptime               : {resp[1]['data'].get('uptime')}",
-                tabulation=True,
-            )
-            self.__log(
-                message=f"Available containers : {resp[1]['data'].get('available')}\n",
-                tabulation=True,
+            self.__log_stdout("Server statistics :")
+            self.__log_stdout(f" ↳ Uptime : {resp[1]['data'].get('uptime')}")
+            self.__log_stdout(
+                f" ↳ Available containers : {resp[1]['data'].get('available')}\n"
             )
 
             access_token_manager.closeDatabase()
@@ -743,42 +773,35 @@ Get the actual server uptime and the available containers left amount.""",
         try:
             if args.l:
                 if args.json:
-                    entry_list = session_credentials_manager.listEntries()
-
                     self.__log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Recorded entries ID",
-                        data={"entry_list": entry_list},
+                        data={"entry_list": session_credentials_manager.listEntries()},
                     )
-
                     return
 
-                self.__log(message="Listing recorded entries ID ...")
-
                 for entries in session_credentials_manager.listEntries():
-                    self.__log(message=f"\n  - Entry ID {entries[0]}")
-                    self.__log(
-                        message=f"     Created : {datetime.fromtimestamp(entries[1])}",
-                        tabulation=True,
+                    self.__log_stdout(f"Entry ID {entries[0]}")
+                    self.__log_stdout(
+                        f" ↳ Created : {datetime.fromtimestamp(entries[1])}"
                     )
-                    self.__log(
-                        message=f"     Server IP : {entries[2]}",
-                        tabulation=True,
-                    )
-
-                self.__log(LOG_START_SUCCESS, "Done")
+                    self.__log_stdout(f" ↳ Server IP : {entries[2]}\n")
 
             elif args.get_entry:
-                self.__log(
-                    message=f"Fetching session credentials ID {args.get_entry} ...",
-                    bypass=args.json,
-                )
-
                 credentials = session_credentials_manager.getEntry(args.get_entry)
 
                 if not credentials:
                     session_credentials_manager.closeDatabase()
-                    raise LookupError(f"Entry ID '{args.get_entry}' does not exists")
+
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"Entry ID '{args.get_entry}' does not exists",
+                        )
+                        return
+
+                    self.__log_stdout(f"Entry ID '{args.get_entry}' does not exists\n")
+                    return
 
                 if args.json:
                     self.__log_json(
@@ -792,38 +815,33 @@ Get the actual server uptime and the available containers left amount.""",
                             "client_token": credentials[5],
                         },
                     )
-
                     return
 
-                self.__log(LOG_START_SUCCESS, f"Entry ID {args.get_entry} content :")
-                self.__log(
-                    message=f"   Created : {datetime.fromtimestamp(credentials[1])}",
-                    tabulation=True,
+                self.__log_stdout(f"Entry ID {args.get_entry} content :")
+                self.__log_stdout(
+                    f" ↳ Created : {datetime.fromtimestamp(credentials[1])}"
                 )
-                self.__log(
-                    message=f"   Server IP : {credentials[2]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Server port : {credentials[3]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Container UUID : {credentials[4]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Client token : {credentials[5]}\n",
-                    tabulation=True,
-                )
+                self.__log_stdout(f" ↳ Server IP : {credentials[2]}")
+                self.__log_stdout(f" ↳ Server port : {credentials[3]}")
+                self.__log_stdout(f" ↳ Container UUID : {credentials[4]}")
+                self.__log_stdout(f" ↳ Client token : {credentials[5]}\n")
 
             else:
                 if args.delete_entry:
                     if not session_credentials_manager.getEntry(args.delete_entry):
                         session_credentials_manager.closeDatabase()
-                        raise LookupError(
-                            f"Entry ID '{args.delete_entry}' does not exists"
+
+                        if args.json:
+                            self.__log_json(
+                                LOG_JSON_STATUS_ERROR,
+                                f"Entry ID '{args.delete_entry}' does not exists",
+                            )
+                            return
+
+                        self.__log_stdout(
+                            f"Entry ID '{args.delete_entry}' does not exists\n"
                         )
+                        return
 
                     session_credentials_manager.deleteEntry(args.delete_entry)
 
@@ -831,9 +849,7 @@ Get the actual server uptime and the available containers left amount.""",
                         self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
                         return
 
-                    self.__log(
-                        LOG_START_SUCCESS, f"Entry ID {args.delete_entry} was deleted\n"
-                    )
+                    self.__log_stdout(f"Entry ID {args.delete_entry} was deleted\n")
 
             session_credentials_manager.closeDatabase()
 
@@ -884,42 +900,36 @@ Get the actual server uptime and the available containers left amount.""",
         try:
             if args.l:
                 if args.json:
-                    entry_list = container_credentials_manager.listEntries()
-
                     self.__log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Recorded entries ID",
-                        data={"entry_list": entry_list},
+                        data={
+                            "entry_list": container_credentials_manager.listEntries()
+                        },
                     )
-
                     return
 
-                self.__log(message="Listing recorded entries ID ...")
-
                 for entries in container_credentials_manager.listEntries():
-                    self.__log(message=f"\n  - Entry ID {entries[0]}")
-                    self.__log(
-                        message=f"     Created : {datetime.fromtimestamp(entries[1])}",
-                        tabulation=True,
+                    self.__log_stdout(f"Entry ID {entries[0]}")
+                    self.__log_stdout(
+                        f" ↳ Created : {datetime.fromtimestamp(entries[1])}"
                     )
-                    self.__log(
-                        message=f"     Server IP : {entries[2]}",
-                        tabulation=True,
-                    )
-
-                self.__log(LOG_START_SUCCESS, "Done")
+                    self.__log_stdout(f" ↳ Server IP : {entries[2]}\n")
 
             elif args.get_entry:
-                self.__log(
-                    message=f"Fetching container credentials ID {args.get_entry} ...",
-                    bypass=args.json,
-                )
-
                 credentials = container_credentials_manager.getEntry(args.get_entry)
 
                 if not credentials:
                     container_credentials_manager.closeDatabase()
-                    raise LookupError(f"Entry ID '{args.get_entry}' does not exists")
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"Entry ID '{args.get_entry}' does not exists",
+                        )
+                        return
+
+                    self.__log_stdout(f"Entry ID '{args.get_entry}' does not exists\n")
+                    return
 
                 if args.json:
                     self.__log_json(
@@ -934,42 +944,34 @@ Get the actual server uptime and the available containers left amount.""",
                             "container_listen_port": credentials[6],
                         },
                     )
-
                     return
 
-                self.__log(LOG_START_SUCCESS, f"Entry ID {args.get_entry} content :")
-                self.__log(
-                    message=f"   Created : {datetime.fromtimestamp(credentials[1])}",
-                    tabulation=True,
+                self.__log_stdout(f"Entry ID {args.get_entry} content :")
+                self.__log_stdout(
+                    f" ↳ Created : {datetime.fromtimestamp(credentials[1])}"
                 )
-                self.__log(
-                    message=f"   Server IP : {credentials[2]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Server port : {credentials[3]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Container SSH username : {credentials[4]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Container SSH password : {credentials[5]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Container SSH listen port : {credentials[6]}\n",
-                    tabulation=True,
-                )
+                self.__log_stdout(f" ↳ Server IP : {credentials[2]}")
+                self.__log_stdout(f" ↳ Server port : {credentials[3]}")
+                self.__log_stdout(f" ↳ Container SSH username : {credentials[4]}")
+                self.__log_stdout(f" ↳ Container SSH password : {credentials[5]}")
+                self.__log_stdout(f" ↳ Container SSH listen port : {credentials[6]}\n")
 
             else:
                 if args.delete_entry:
                     if not container_credentials_manager.getEntry(args.delete_entry):
                         container_credentials_manager.closeDatabase()
-                        raise LookupError(
-                            f"Entry ID '{args.delete_entry}' does not exists"
+
+                        if args.json:
+                            self.__log_json(
+                                LOG_JSON_STATUS_ERROR,
+                                f"Entry ID '{args.delete_entry}' does not exists",
+                            )
+                            return
+
+                        self.__log_stdout(
+                            f"Entry ID '{args.delete_entry}' does not exists\n"
                         )
+                        return
 
                     container_credentials_manager.deleteEntry(args.delete_entry)
 
@@ -977,9 +979,7 @@ Get the actual server uptime and the available containers left amount.""",
                         self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
                         return
 
-                    self.__log(
-                        LOG_START_SUCCESS, f"Entry ID {args.delete_entry} was deleted\n"
-                    )
+                    self.__log_stdout(f"Entry ID {args.delete_entry} was deleted\n")
 
             container_credentials_manager.closeDatabase()
 
@@ -991,13 +991,14 @@ Get the actual server uptime and the available containers left amount.""",
         parser = argparse.ArgumentParser(
             description="-> Manage access tokens",
             usage=f"{sys.argv[0]} access-tk [OPT] ",
+            epilog="(*) Input pipe is needed if used with the --json flag : 'echo <token> | anwdlclient access-tk -a <server_ip> --json'",
         )
         parser.add_argument(
             "-l", help="list recorded tokens entries", action="store_true"
         )
         parser.add_argument(
             "-a",
-            help="add entry token (input pipe is needed if used with the --json flag)",
+            help="add entry token (*)",
             dest="server_ip",
             type=str,
         )
@@ -1040,45 +1041,46 @@ Get the actual server uptime and the available containers left amount.""",
         try:
             if args.l:
                 if args.json:
-                    entry_list = access_token_manager.listEntries()
-
                     self.__log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Recorded entries ID",
-                        data={"entry_list": entry_list},
+                        data={"entry_list": access_token_manager.listEntries()},
                     )
-
                     return
 
-                self.__log(message="Listing recorded entries ID ...", bypass=args.json)
-
                 for entries in access_token_manager.listEntries():
-                    self.__log(message=f"\n  - Entry ID {entries[0]}", bypass=args.json)
-                    self.__log(
-                        message=f"     Created : {datetime.fromtimestamp(entries[1])}",
-                        tabulation=True,
+                    self.__log_stdout(f"Entry ID {entries[0]}")
+                    self.__log_stdout(
+                        f" ↳ Created : {datetime.fromtimestamp(entries[1])}"
                     )
-                    self.__log(
-                        message=f"     Server IP : {entries[2]}",
-                        tabulation=True,
-                    )
-
-                self.__log(LOG_START_SUCCESS, "Done")
+                    self.__log_stdout(f" ↳ Server IP : {entries[2]}\n")
 
             elif args.server_ip:
                 if not isValidIP(args.server_ip):
-                    raise ValueError("Parameter 'ip' must be a IPv4 ip format")
-
-                if args.server_port:
-                    if int(args.server_port) >= 65535 or int(args.server_port) <= 0:
-                        raise ValueError(
-                            "Parameter 'port' must be a non-zero integer, and less than 65535"
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"'{args.server_ip}' is not a valid IPv4 ip format",
                         )
+                        return
+
+                    self.__log_stdout(
+                        f"'{args.server_ip}' is not a valid IPv4 ip format\n"
+                    )
+                    return
 
                 if access_token_manager.getEntryID(args.server_ip):
-                    raise LookupError(
-                        f"{args.server_ip} is already specified on database"
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"'{args.server_ip}' is already specified on database",
+                        )
+                        return
+
+                    self.__log_stdout(
+                        f"'{args.server_ip}' is already specified on database\n"
                     )
+                    return
 
                 new_access_token = (
                     getpass(prompt="Paste the new token : ")
@@ -1101,9 +1103,8 @@ Get the actual server uptime and the available containers left amount.""",
                     )
                     return
 
-                self.__log(
-                    LOG_START_SUCCESS,
-                    f"New token entry created (Entry ID : {new_entry_tuple[0]})\n",
+                self.__log_stdout(
+                    f"New token entry created (Entry ID : {new_entry_tuple[0]})\n"
                 )
 
             elif args.print_entry:
@@ -1111,7 +1112,18 @@ Get the actual server uptime and the available containers left amount.""",
 
                 if not entry_content:
                     access_token_manager.closeDatabase()
-                    raise LookupError(f"Entry ID '{args.print_entry}' does not exists")
+
+                    if args.json:
+                        self.__log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"Entry ID '{args.print_entry}' does not exists",
+                        )
+                        return
+
+                    self.__log_stdout(
+                        f"Entry ID '{args.print_entry}' does not exists\n"
+                    )
+                    return
 
                 if args.json:
                     self.__log_json(
@@ -1124,34 +1136,32 @@ Get the actual server uptime and the available containers left amount.""",
                             "access_token": entry_content[4],
                         },
                     )
-
                     return
 
-                self.__log(LOG_START_SUCCESS, f"Entry ID {args.print_entry} token :")
-                self.__log(
-                    message=f"   Created : {datetime.fromtimestamp(entry_content[1])}",
-                    tabulation=True,
+                self.__log_stdout(f"Entry ID {args.print_entry} content :")
+                self.__log_stdout(
+                    f" ↳ Created : {datetime.fromtimestamp(entry_content[1])}"
                 )
-                self.__log(
-                    message=f"   Server IP : {entry_content[2]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Server port : {entry_content[3]}",
-                    tabulation=True,
-                )
-                self.__log(
-                    message=f"   Access token : {entry_content[4]}\n",
-                    tabulation=True,
-                )
+                self.__log_stdout(f" ↳ Server IP : {entry_content[2]}")
+                self.__log_stdout(f" ↳ Server port : {entry_content[3]}")
+                self.__log_stdout(f" ↳ Access token : {entry_content[4]}\n")
 
             else:
                 if args.delete_entry:
                     if not access_token_manager.getEntry(args.delete_entry):
                         access_token_manager.closeDatabase()
-                        raise LookupError(
-                            f"Entry ID '{args.delete_entry}' does not exists"
+
+                        if args.json:
+                            self.__log_json(
+                                LOG_JSON_STATUS_ERROR,
+                                f"Entry ID '{args.delete_entry}' does not exists",
+                            )
+                            return
+
+                        self.__log_stdout(
+                            f"Entry ID '{args.delete_entry}' does not exists\n"
                         )
+                        return
 
                     access_token_manager.deleteEntry(args.delete_entry)
 
@@ -1159,9 +1169,7 @@ Get the actual server uptime and the available containers left amount.""",
                         self.__log_json(LOG_JSON_STATUS_SUCCESS, "Entry ID was deleted")
                         return
 
-                    self.__log(
-                        LOG_START_SUCCESS, f"Entry ID {args.delete_entry} was deleted\n"
-                    )
+                    self.__log_stdout(f"Entry ID {args.delete_entry} was deleted\n")
 
             access_token_manager.closeDatabase()
 
@@ -1187,10 +1195,6 @@ Get the actual server uptime and the available containers left amount.""",
 
         self.json = args.json
 
-        self.__log(
-            message=f"Generating {args.key_size if args.key_size else DEFAULT_RSA_KEY_SIZE} bytes RSA key pair ... "
-        )
-
         new_rsa_wrapper = RSAWrapper(
             key_size=args.key_size if args.key_size else DEFAULT_RSA_KEY_SIZE
         )
@@ -1204,11 +1208,5 @@ Get the actual server uptime and the available containers left amount.""",
             )
             return
 
-        self.__log(
-            LOG_START_SUCCESS,
-            "RSA keys re-generated",
-        )
-        self.__log(
-            message=f"Fingerprint : {fingerprint}\n",
-            tabulation=True,
-        )
+        self.__log_stdout("RSA keys re-generated")
+        self.__log_stdout(f" ↳ Fingerprint : {fingerprint}\n")

@@ -6,9 +6,18 @@
     Client installation script
 
 """
+from subprocess import Popen, PIPE
 from setuptools import setup
 import getpass
+import shutil
 import os
+
+ACTUAL_VERSION = "1.1.0"
+
+
+def executeCommand(command):
+    Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
+
 
 anweddol_base_path = (
     f"C:\\Users\\{getpass.getuser()}\\Anweddol\\"
@@ -17,11 +26,11 @@ anweddol_base_path = (
 )
 local_ifs = "\\" if os.name == "nt" else "/"
 
-print("Creating base folder ...")
+print("[SETUP] Creating base folder ...")
 if not os.path.exists(anweddol_base_path):
     os.mkdir(anweddol_base_path)
 
-print("Creating configuration file ...")
+print("[SETUP] Creating configuration file ...")
 if os.path.exists(anweddol_base_path + "config.yaml"):
     os.remove(anweddol_base_path + "config.yaml")
 
@@ -50,10 +59,24 @@ with open(
     with open(anweddol_base_path + "config.yaml", "w") as fd:
         fd.write(data)
 
-print("Installing Anweddol client ...")
+print("[SETUP] Creating uninstallation script ...")
+if os.name == "nt":
+    shutil.copy(
+        os.path.dirname(os.path.realpath(__file__)) + "\\anwdlclient-uninstall",
+        anweddol_base_path,
+    )
+
+else:
+    shutil.copy(
+        os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
+        f"/home/{getpass.getuser()}/.local/bin/",
+    )
+    executeCommand(f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall")
+
+print("[SETUP] Installing Anweddol client ...")
 setup(
     name="anwdlclient",
-    version="1.0.0",
+    version=ACTUAL_VERSION,
     description="The Anweddol client implementation",
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",
@@ -68,7 +91,7 @@ setup(
     ],
     license="GPL v3",
     url="https://github.com/the-anweddol-project/Anweddol-client",
-    packages=["anwdlclient"],
+    packages=["anwdlclient", "anwdlclient.core", "anwdlclient.tools"],
     install_requires=["cryptography", "cerberus", "pyyaml"],
     include_package_data=True,
     entry_points={
