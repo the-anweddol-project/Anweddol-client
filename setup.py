@@ -60,18 +60,21 @@ try:
             fd.write(data)
 
     print("[SETUP] Creating uninstallation script ...")
-    if os.name == "nt":
-        shutil.copy(
-            os.path.dirname(os.path.realpath(__file__)) + "\\anwdlclient-uninstall",
-            anweddol_base_path,
-        )
+    try:
+        if os.name == "nt":
+            shutil.copy(
+                os.path.dirname(os.path.realpath(__file__)) + "\\anwdlclient-uninstall",
+                anweddol_base_path,
+            )
 
-    else:
-        shutil.copy(
-            os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
-            f"/home/{getpass.getuser()}/.local/bin/",
-        )
-        executeCommand(f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall")
+        else:
+            shutil.copy(
+                os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
+                f"/home/{getpass.getuser()}/.local/bin/",
+            )
+            executeCommand(f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall")
+    except:
+        pass
 
 except Exception as E:
     # For Github actions build phase :[
