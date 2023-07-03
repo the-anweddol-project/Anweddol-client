@@ -2,6 +2,8 @@ include README.md
 include LICENSE
 include CONTRIBUTING
 include pyproject.toml
-include resources
+include anwdlclient-uninstall
+include anwdlclient-uninstall.bat
 
+recursive-include resources *
 recursive-include anwdlclient *
