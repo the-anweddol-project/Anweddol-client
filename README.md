@@ -25,32 +25,20 @@ To get the server source code, see the [Anweddol server repository](https://gith
 
 ## Installation
 
-### Pip installation
-
-Install it with pip (linux):
-```
-$ pip install anwdlclient
-```
-
-On windows : 
-```
-$ py -m pip install anwdlclient
-```
-
-### Source installation
-
 Clone the client source code repository : 
 ```
 $ git clone https://github.com/the-anweddol-project/Anweddol-client.git
 $ cd Anweddol-client
 ```
 
-Install it with pip (linux):
+Install it with pip :
+
+**Linux-based OS** : 
 ```
 $ pip install .
 ```
 
-On windows : 
+**Windows** :
 ```
 $ py -m pip install . 
 ```

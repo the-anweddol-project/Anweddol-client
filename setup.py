@@ -12,11 +12,16 @@ import getpass
 import shutil
 import os
 
-ACTUAL_VERSION = "1.1.1"
+ACTUAL_VERSION = "1.1.2"
 
 
 def executeCommand(command):
     Popen(command.split(" "), shell=False, stdout=PIPE, stderr=PIPE)
+
+
+def getReadmeContent():
+    with open("README.md", "r") as fd:
+        return fd.read()
 
 
 anweddol_base_path = (
@@ -62,13 +67,15 @@ with open(
 print("[SETUP] Creating uninstallation script ...")
 if os.name == "nt":
     shutil.copyfile(
-        os.path.dirname(os.path.realpath(__file__)) + "\\anwdlclient-uninstall",
-        anweddol_base_path + "anwdlclient-uninstall",
+        os.path.dirname(os.path.realpath(__file__))
+        + f"{local_ifs}resources{local_ifs}anwdlclient-uninstall.bat",
+        anweddol_base_path + "anwdlclient-uninstall.bat",
     )
 
 else:
     shutil.copyfile(
-        os.path.dirname(os.path.realpath(__file__)) + "/anwdlclient-uninstall",
+        os.path.dirname(os.path.realpath(__file__))
+        + f"{local_ifs}resources{local_ifs}anwdlclient-uninstall",
         f"/home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall",
     )
     executeCommand(
@@ -79,21 +86,28 @@ print("[SETUP] Installing Anweddol client ...")
 setup(
     name="anwdlclient",
     version=ACTUAL_VERSION,
-    description="The Anweddol client implementation",
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",
+    url="https://github.com/the-anweddol-project/Anweddol-client",
+    description="The Anweddol client implementation",
+    long_description=getReadmeContent(),
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Intended Audience :: Developers",
         "Intended Audience :: End Users/Desktop",
         "Programming Language :: Python :: 3",
+        "Operating System :: POSIX",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: MacOS",
         "Topic :: Internet",
         "Topic :: System :: Emulators",
     ],
     license="GPL v3",
-    url="https://github.com/the-anweddol-project/Anweddol-client",
     packages=["anwdlclient", "anwdlclient.core", "anwdlclient.tools"],
     install_requires=["cryptography", "cerberus", "pyyaml"],
     include_package_data=True,
+    entry_points={
+        "console_scripts": ["anwdlclient = anwdlclient.cli:MainAnweddolClientCLI"],
+    },
 )
