@@ -12,7 +12,7 @@ import getpass
 import shutil
 import os
 
-ACTUAL_VERSION = "1.1.2"
+VERSION = "1.1.3"
 
 
 def executeCommand(command):
@@ -79,13 +79,13 @@ else:
         f"/home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall",
     )
     executeCommand(
-        f"chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall"
+        f"/bin/chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall"
     )
 
 print("[SETUP] Installing Anweddol client ...")
 setup(
     name="anwdlclient",
-    version=ACTUAL_VERSION,
+    version=VERSION,
     author="The Anweddol project",
     author_email="the-anweddol-project@proton.me",
     url="https://github.com/the-anweddol-project/Anweddol-client",

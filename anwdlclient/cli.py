@@ -429,10 +429,10 @@ please report it by opening an issue on the repository :
                 return
 
             self.__log_stdout(
-                f"Session credentials was stored with ID {new_session_credentials_entry_tuple[0]}",
+                f" ↳ Session credentials ID : {new_session_credentials_entry_tuple[0]}",
             )
             self.__log_stdout(
-                f"Container credentials was stored with ID {new_container_credentials_entry_tuple[0]}\n",
+                f" ↳ Container credentials ID : {new_container_credentials_entry_tuple[0]}\n",
             )
 
         except Exception as E:
