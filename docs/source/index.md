@@ -69,7 +69,6 @@ contribute
 
 Here is the social links of the Anweddol project : 
 
-- [https://www.reddit.com/r/Anweddol/](https://www.reddit.com/r/Anweddol/)
 - [https://github.com/the-anweddol-project](https://github.com/the-anweddol-project)
 - [https://anweddol.zulipchat.com](https://anweddol.zulipchat.com)
 
