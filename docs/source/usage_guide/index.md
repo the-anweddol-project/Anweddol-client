@@ -39,6 +39,15 @@ maxdepth: 3
 includehidden:
 ---
 
+authentication
+```
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
 configuration_file
 ```
 
