@@ -1,6 +1,7 @@
 include README.md
 include LICENSE
 include CONTRIBUTING
+include uninstall.sh
+include uninstall.bat
 
-recursive-include resources *
 recursive-include anwdlclient *
