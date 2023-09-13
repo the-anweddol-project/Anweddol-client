@@ -2,394 +2,522 @@
 
 ----
 
-> Credentials management features
+## class *SessionCredentialsManager*
 
-> Package `anwdlclient.tools.credentials`
+### Definition
 
-## Constants
-
-None
-
-## Classes
-
-### `SessionCredentialsManager`
-
-#### Definition
-
-```
-class SessionCredentialsManager(session_credentials_db_path: str)
+```{class} anwdlclient.tools.credentials.SessionCredentialsManager(session_credentials_db_path: str)
 ```
 
-> Provides session credentials storage and management functionality
+Provides session credentials storage and management functionality.
 
-_Parameters_ : 
-
-- `session_credentials_db_path` : The session credentials database file path
-
-#### Methods
-
+```{tip}
+This class can be used in a 'with' statement.
 ```
-getDatabaseConnection() -> sqlite3.Connection
+**Parameters** : 
+
+> ```{attribute} session_credentials_db_path
+> > Type : str
+> 
+> The session credentials database file path.
+> ```
+
+### General usage
+
+```{classmethod} getDatabaseConnection()
 ```
 
-> Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection) object of the instance
+Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection) object of the instance.
 
-_Parameters_ : 
+**Parameters** :
 
-- None
+> None.
 
-_Return value_ : 
+**Return value** :
 
-- The `sqlite3.Connection` object of the instance
+> The `sqlite3.Connection` object of the instance.
 
 ---
+
+```{classmethod} getCursor()
 ```
-getCursor() -> sqlite3.Cursor:
-```
 
-> Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor) object of the instance
+Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor) object of the instance.
 
-_Parameters_ : 
+**Parameters** : 
 
-- None
+> None.
 
-_Return value_ : 
+**Return value** : 
 
-- The `sqlite3.Cursor` object of the instance
+> The `sqlite3.Cursor` object of the instance.
 
 ---
+
+```{classmethod} closeDatabase() -> None
 ```
-getEntryID(server_ip: str) -> None | int
+
+Close the database.
+
+**Parameters** :
+
+> None.
+
+**Return value** :
+
+> `None`.
+
+```{note}
+This method is automatically called within the `__del__` method.
 ```
 
-> Get the entry ID of a specific IP
+### CRUD operations
 
-_Parameters_ : 
+```{classmethod} getEntryID(server_ip)
+```
 
-- `server_ip` : The server IP to search for
+Get the entry ID of a specific IP.
 
-_Return value_ : 
+**Parameters** : 
 
-- The entry ID of the specified IP if exists, `None` otherwise. 
+> ```{attribute} server_ip
+> > Type : str
+> 
+> The server IP to search for.
+> ```
+
+**Return value** : 
+
+> The entry ID of the specified IP if exists, `None` otherwise. 
 
 ---
-```
-getEntry(entry_id: int) -> tuple
-```
 
-> Get entry credentials
-
-_Parameters_ : 
-
-- `entry_id` : The entry ID to get the credentials from
-
-_Return value_ : 
-
-- A tuple representing the full entry row : 
-
-```
-(
-	entry_id,
-	creation_timestamp,
-	server_ip,
-	server_port,
-	container_uuid,
-	client_token
-)
+```{classmethod} getEntry(entry_id: int) -> tuple
 ```
 
-- `entry_id` : The entry ID
-- `creation_timestamp` : The entry creation timestamp
-- `server_ip` : The affiliated server IP
-- `server_port` : The affiliated server port
-- `container_uuid` : The container UUID
-- `client_token` : The client token
+Get entry credentials.
+
+**Parameters** : 
+
+> ```{attribute} entry_id
+> > Type : int
+> 
+> The entry ID to get the credentials from.
+> ```
+
+**Return value** : 
+
+> A tuple representing the full entry row : 
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp,
+> 	server_ip,
+> 	server_port,
+> 	container_uuid,
+> 	client_token
+> )
+> ```
+
+> - *entry_id* (Type : int)
+>   
+>   The entry ID.
+> 
+> - *creation_timestamp* (Type : int)
+>   
+>   The entry creation timestamp.
+> 
+> - *server_ip* (Type : str)
+>   
+>   The affiliated server IP.
+> 
+> - *server_port* (Type : int)
+>   
+>   The affiliated server port.
+> 
+> - *container_uuid* (Type : str)
+>   
+>   The container UUID.
+> 
+> - *client_token* (Type : str)
+>   
+>   The client token.
 
 ---
-```
-addEntry(
-	server_ip: str,
-    server_port: int,
-    container_uuid: str,
-    client_token: str,
-) -> tuple
+
+```{classmethod} addEntry(server_ip, server_port, container_uuid, client_token)
 ```
 
-> Add an entry
+Add an entry.
 
-_Parameters_ : 
+**Parameters** : 
 
-- `server_ip` : The server IP
-- `server_port` : The server listen port
-- `container_uuid` : The container UUID
-- `client_token` : The client token
+> ```{attribute} server_ip
+> > Type : str
+> 
+> The server IP.
+> ```
 
-_Return value_ : 
+> ```{attribute} server_port
+> > Type : int
+> 
+> The server listen port.
+> ```
 
-- A tuple representing the infomations of the created entry :
+> ```{attribute} container_uuid
+> > Type : str
+> 
+> The container UUID.
+> ```
 
+> ```{attribute} client_token
+> > Type : str
+> 
+> The client token.
+> ```
+
+**Return value** : 
+
+> A tuple representing the infomations of the created entry :
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp
+> )
+> ```
+
+> - *entry_id*
+> 
+>   The new entry ID.
+> 
+> - *creation_timestamp*
+> 
+>   The entry ID creation timestamp.
+
+```{warning}
+Since the `container_uuid` and the `client_token` values are meant to be read and reused later, they are stored in plain text on the database.
 ```
-(
-	entry_id,
-	creation_timestamp
-)
-```
-
-- `entry_id` : The new entry ID
-- `creation_timestamp` : The entry ID creation timestamp
-
-**NOTE** : Since the `container_uuid` and the `client_token` values are meant to be read and reused later, they are stored in plain text on the database.
 
 ---
-```
-listEntries() -> list
-```
 
-> List entries
-
-_Parameters_ : 
-
-- None
-
-_Return value_ : 
-
-- A list of tuples representing every session credentials entries on the database : 
-
-```
-(
-	entry_id,
-	creation_timestamp,
-	server_ip
-)
+```{classmethod} listEntries()
 ```
 
-- `entry_id` : The entry ID
-- `creation_timestamp` : The entry creation timestamp
-- `server_ip` : The affiliated server IP
+List entries.
 
-**NOTE** : Sensitive credentials arent listed with this method. Use the `getEntry` method to do so.
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> A list of tuples representing every session credentials entries on the database : 
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp,
+> 	server_ip
+> )
+> ```
+
+> - *entry_id* (Type : int)
+> 
+>   The new entry ID.
+> 
+> - *creation_timestamp* (Type : int)
+> 
+>   The entry ID creation timestamp.
+>
+> - *server_ip* (Type : str)
+>   
+>   The affiliated server IP.
+
+```{note}
+Sensitive credentials arent listed with this method. Use the `getEntry` method to do so.
+```
 
 ---
+
+```{classmethod} deleteEntry(entry_id)
 ```
-deleteEntry(entry_id: int) -> None
+
+Delete an entry.
+
+**Parameters** : 
+
+> ```{attribute} entry_id
+> > Type : int
+> 
+> The entry ID to delete on the database.
+> ```
+
+**Return value** : 
+
+> `None`.
+
+## class *ContainerCredentialsManager*
+
+### Definition
+
+```{class} anwdlclient.tools.credentials.ContainerCredentialsManager(container_credentials_db_path)
 ```
 
-> Delete an entry
+Provides container credentials storage and management functionality.
 
-_Parameters_ : 
+**Parameters** : 
 
-- `entry_id` : The entry ID to delete on the database
+> ```{attribute} container_credentials_db_path
+> > Type : str
+> 
+> The container credentials database file path.
+> ```
 
-_Return value_ : 
+### General usage
 
-- None
+```{classmethod} getDatabaseConnection()
+```
+
+Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection) object of the instance.
+
+**Parameters** : 
+
+> None.
+
+**Return value** : 
+
+> The `sqlite3.Connection` object of the instance.
 
 ---
-```
-closeDatabase() -> None
-```
 
-> Close the database
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- None
-
-**NOTE** : This method is automatically called within the `__del__` method, but it is programatically better to call it naturally
-
-### `ContainerCredentialsManager`
-
-#### Definition
-
-```
-class ContainerCredentialsManager(container_credentials_db_path: str)
+```{classmethod} getCursor()
 ```
 
-> Provides container credentials storage and management functionality
+Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor) object of the instance.
 
-_Parameters_ : 
+**Parameters** : 
 
-- `container_credentials_db_path` : The container credentials database file path
+> None.
 
-#### Methods
+**Return value** : 
 
-```
-getDatabaseConnection() -> sqlite3.Connection
-```
-
-> Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection) object of the instance
-
-_Parameters_ : 
-
-- None
-
-_Return value_ : 
-
-- The `sqlite3.Connection` object of the instance
+> The `sqlite3.Cursor` object of the instance.
 
 ---
+
+```{classmethod} closeDatabase()
 ```
-getCursor() -> sqlite3.Cursor:
+
+Close the database.
+
+**Parameters** :
+
+> None.
+
+**Return value** :
+
+> `None`.
+
+```{note}
+This method is automatically called within the `__del__` method.
 ```
 
-> Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor) object of the instance
+### CRUD operations
 
-_Parameters_ : 
+```{classmethod} getEntryID(server_ip)
+```
 
-- None
+Get the entry ID of a specific IP.
 
-_Return value_ : 
+**Parameters** : 
 
-- The `sqlite3.Cursor` object of the instance
+> ```{attribute} server_ip
+> > Type : str
+> 
+> The server IP to search for.
+> ```
+
+**Return value** : 
+
+> The entry ID of the specified IP if exists, `None` otherwise. 
 
 ---
+
+```{classmethod} getEntry(entry_id)
 ```
-getEntryID(server_ip: str) -> None | int
-```
 
-> Get the entry ID of a specific IP
+Get entry credentials.
 
-_Parameters_ : 
+**Parameters** : 
 
-- `server_ip` : The server IP to search for
+> ```{attribute} entry_id
+> > Type : int
+> 
+> The entry ID to get the credentials from.
+> ```
 
-_Return value_ : 
+**Return value** : 
 
-- The entry ID of the specified IP if exists, `None` otherwise. 
+> A tuple representing the full entry row : 
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp,
+> 	server_ip,
+> 	server_port,
+> 	container_username,
+> 	container_password,
+> 	container_listen_port
+> )
+> ```
+
+> - *entry_id*
+> 
+>   The entry ID.
+> 
+> - *creation_timestamp*
+> 
+>   The entry creation timestamp.
+> 
+> - *server_ip*
+> 
+>   The affiliated server IP.
+> 
+> - *server_port*
+> 
+>   The affiliated server port.
+> 
+> - *container_username*
+> 
+>   The container SSH username.
+> 
+> - *container_password*
+> 
+>   The container SSH password.
+> 
+> - *container_listen_port*
+> 
+>   The container SSH listen port.
 
 ---
-```
-getEntry(entry_id: int) -> tuple
-```
 
-> Get entry credentials
-
-_Parameters_ : 
-
-- `entry_id` : The entry ID to get the credentials from
-
-_Return value_ : 
-
-- A tuple representing the full entry row : 
-
-```
-(
-	entry_id,
-	creation_timestamp,
-	server_ip,
-	server_port,
-	container_username,
-	container_password,
-	container_listen_port
-)
+```{classmethod} addEntry(server_ip, server_port, container_username, container_password, container_listen_port)
 ```
 
-- `entry_id` : The entry ID
-- `creation_timestamp` : The entry creation timestamp
-- `server_ip` : The affiliated server IP
-- `server_port` : The affiliated server port
-- `container_username` : The container SSH username
-- `container_password` : The container SSH password
-- `container_listen_port` : The container SSH listen port
+Add an entry.
+
+**Parameters** : 
+
+> ```{attribute} server_ip
+> > Type : str
+> 
+> The server IP.
+> ```
+
+> ```{attribute} server_port
+> > Type : int
+> 
+> The server listen port.
+> ```
+
+> ```{attribute} container_username
+> > Type : str
+> 
+> The container SSH username.
+> ```
+
+> ```{attribute} container_password
+> > Type : str
+> 
+> The container SSH password.
+> ```
+
+> ```{attribute} container_listen_port
+> > Type : int
+> 
+> The container SSH listen port.
+> ```
+
+**Return value** : 
+
+> A tuple representing the infomations of the created entry :
+
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp
+> )
+> ```
+
+> - *entry_id*
+> 
+>   The new entry ID.
+> 
+> - *creation_timestamp*
+> 
+>   The entry ID creation timestamp.
+
+```{warning}
+Since the `container_username`, `container_password` and the `container_listen_port` values are meant to be read and reused later, they are stored in plain text on the database.
+```
 
 ---
-```
-addEntry(
-    server_ip: str,
-    server_port: int,
-    container_username: str,
-    container_password: str,
-    container_listen_port: int
-) -> tuple
+
+```{classmethod} listEntries()
 ```
 
-> Add an entry
+List entries.
 
-_Parameters_ : 
+**Parameters** : 
 
-- `server_ip` : The server IP
-- `server_port` : The server listen port
-- `container_username` : The container SSH username
-- `container_password` : The container SSH password
-- `container_listen_port` : The container SSH listen port
+> None
 
-_Return value_ : 
+**Return value** : 
 
-- A tuple representing the infomations of the created entry :
+> A list of tuples representing every container credentials entries on the database : 
 
+> ```
+> (
+> 	entry_id,
+> 	creation_timestamp,
+> 	server_ip
+> )
+> ```
+
+> - *entry_id*
+> 
+>   The entry ID.
+> 
+> - *creation_timestamp*
+> 
+>   The entry creation timestamp.
+> 
+> - *server_ip*
+> 
+>   The affiliated server IP.
+
+```{note}
+Sensitive credentials arent listed with this method. Use the `getEntry` method to do so.
 ```
-(
-	entry_id,
-	creation_timestamp
-)
-```
-
-- `entry_id` : The new entry ID
-- `creation_timestamp` : The entry ID creation timestamp
-
-**NOTE** : Since the `container_username`, `container_password` and the `container_listen_port` values are meant to be read and reused later, they are stored in plain text on the database.
 
 ---
-```
-listEntries() -> list
-```
 
-> List entries
-
-_Parameters_ : 
-
-- None
-
-_Return value_ : 
-
-- A list of tuples representing every container credentials entries on the database : 
-
-```
-(
-	entry_id,
-	creation_timestamp,
-	server_ip
-)
+```{classmethod} deleteEntry(entry_id)
 ```
 
-- `entry_id` : The entry ID
-- `creation_timestamp` : The entry creation timestamp
-- `server_ip` : The affiliated server IP
+Delete an entry.
 
-**NOTE** : Sensitive credentials arent listed with this method. Use the `getEntry` method to do so.
+**Parameters** : 
 
----
-```
-deleteEntry(entry_id: int) -> None
-```
+> ```{attribute} entry_id
+> > Type : int
+> 
+> The entry ID to delete on the database.
+> ```
 
-> Delete an entry
+**Return value** : 
 
-_Parameters_ : 
-
-- `entry_id` : The entry ID to delete on the database
-
-_Return value_ : 
-
-- None
-
----
-```
-closeDatabase() -> None
-```
-
-> Close the database
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- None
-
-**NOTE** : This method is automatically called within the `__del__` method, but it is programatically better to call it naturally
+> `None`.

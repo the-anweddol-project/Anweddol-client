@@ -5,54 +5,63 @@
 
 > Package `anwdlclient.core.util`
 
-## Constants
+## System verification utilities
 
-None
+### Check if a port is bindable
 
-## Functions
-
-```
-isPortBindable(port: int) -> bool
+```{function} anwdlserver.core.utilities.isPortBindable(port)
 ```
 
-> Check if a port is bindable
+Check if a port is bindable.
 
-_Parameters_ :
+**Parameters** :
 
-- `port` : The port to check. It must be an integer between 1 and 65535
+> ```{attribute} port
+> > Type : int
+> 
+> The port whose bindability must be checked. It must be an integer between `1` and `65535`.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- `True` if the port is bindable, `False` otherwise
+> `True` if the port is bindable, `False` otherwise.
 
----
+### Check if a socket is closed
 
-```
-isSocketClosed(socket_descriptor: socket.socket) -> bool
-```
-
-> Check if a socket descriptor is closed
-
-_Parameters_ :
-
-- `socket_descriptor` : The socket descriptor to check
-
-_Return value_ :
-
-- `True` if the socket descriptor is closed, `False` otherwise
-
----
-
-```
-isValidIP(ip: str) -> bool
+```{function} anwdlserver.core.utilities.isSocketClosed(socket_descriptor)
 ```
 
-> Check if the IP is a valid IPv4 format
+Check if a socket descriptor is closed.
 
-_Parameters_ :
+**Parameters** :
 
-- `ip` : The IP to check as a string
+> ```{attribute} socket_descriptor
+> > Type : `socket.socket`
+> 
+> The socket descriptor to check.
+> ```
 
-_Return value_ :
+**Return value** : 
 
-- `True` if the IP is valid , `False` otherwise
+> `True` if the socket descriptor is closed, `False` otherwise.
+
+## Format verification utilities
+
+### Check if an IP is a valid IPv4 format
+
+```{function} anwdlserver.core.utilities.isValidIP(ip)
+```
+
+Check if the IP is a valid IPv4 format.
+
+**Parameters** :
+
+> ```{attribute} ip
+> > Type : str
+> 
+> The IP to check as a string.
+> ```
+
+**Return value** : 
+
+> `True` if the IP is valid , `False` otherwise.

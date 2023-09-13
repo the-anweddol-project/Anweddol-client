@@ -12,17 +12,31 @@ Each commands with the `--json` parameter results on a single JSON structure pri
 {
 	"status": STATUS
 	"message": MESSAGE
-	"data": DATA
+	"result": RESULT
 }
 ```
 
-- `STATUS` : The result status, it can be `"OK"` if there was no errors during the process, `"ERROR"` otherwise.
-- `MESSAGE` : The message according to the command purpose.
-- `DATA` : A dictionary containing every exploitable informations that a command can generate.
+- *STATUS*
 
-The `DATA` dictionary content changes according to the command context (see below).
+  The result status, it can be `"OK"` if there was no errors during the process, `"ERROR"` otherwise.
 
-**NOTE** : Configuration file related errors arent produced in a JSON format.
+- *MESSAGE*
+
+  The message according to the state of the command purpose.
+
+- *RESULT*
+
+  A dictionary containing every exploitable informations that a command can generate.
+
+The `RESULT` dictionary content changes according to the command context (see below).
+
+```{note}
+If a subcommand involves server interaction, the `message` and `data` response keys will be set in the JSON *RESULT* key.
+```
+
+```{warning}
+Configuration file related errors arent produced in a JSON format.
+```
 
 ## Specific result JSON structures
 
@@ -34,13 +48,15 @@ When an error is raised during the process with any `--json` parameter set with 
 {
 	"status": "ERROR",
 	"message": "An error occured",
-	"data": {
+	"result": {
 		"error": ERROR
 	}
 }
 ```
 
-- `ERROR` : The error class that was raised
+- *ERROR*
+
+  The error class that was raised.
 
 ### `create` sub-command
 
@@ -50,19 +66,30 @@ When an error is raised during the process with any `--json` parameter set with 
 {
 	"status": "OK",
 	"message": "Container successfully created",
-	"data": {
+	"result": {
 		"message": MESSAGE,
+		"data": DATA,
 		"session_entry_id": SESSION_ENTRY_ID,
 		"container_entry_id": CONTAINER_ENTRY_ID,
-		SERVER_RESPONSE_DATA_DICTIONARY
 	}
 }
 ```
 
-- `MESSAGE` : The received [response message](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
-- `SESSION_ENTRY_ID` : The created session entry ID
-- `CONTAINER_ENTRY_ID` : The created container entry ID
-- `SERVER_RESPONSE_DATA_DICTIONARY` : The `data` dictionary of the received request as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
+- *MESSAGE*
+
+  The received [response message](../../../technical_specifications/core/communication.md).
+
+- *DATA*
+
+  The `data` dictionary of the received request as described in the technical specifications [Communication section](../../../technical_specifications/core/communication.md).
+
+- *SESSION_ENTRY_ID*
+
+  The created session entry ID.
+
+- *CONTAINER_ENTRY_ID*
+
+  The created container entry ID.
 
 If an error occurs in the process, the JSON structure will be :
 
@@ -70,14 +97,19 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "ERROR",
 	"message": MESSAGE,
-	"data": DATA
+	"result": ERROR
 }
 ```
 
-- `MESSAGE` : A specific message that describes the error
-- `DATA` : The data dictionary affiliated to the message content
+- *MESSAGE*
 
-If the CLI received an invalid response from the server, `DATA` will be :
+  A specific message that describes the error.
+
+- *ERROR*
+
+  The data dictionary affiliated to the message content.
+
+If the CLI received an invalid response from the server, `ERROR` will be :
 
 ```
 {
@@ -85,9 +117,11 @@ If the CLI received an invalid response from the server, `DATA` will be :
 }
 ```
 
-- `ERROR_DICT` : The dictionary depicting the errors detected in the response according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+- *ERROR_DICT*
 
-If the CLI received a response insinuating an error on the server side, `DATA` will be :
+  The dictionary depicting the errors detected in the response according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+
+If the CLI received a response insinuating an error on the server side, `ERROR` will be :
 
 ```
 {
@@ -95,7 +129,9 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 }
 ```
 
-- `RESPONSE` : The received response dictionary as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
+- *RESPONSE*
+
+  The received response dictionary as described in the technical specifications [Communication section](../../../technical_specifications/core/communication.md).
 
 ### `destroy` sub-command
 
@@ -105,13 +141,15 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 {
 	"status": "OK",
 	"message": "Container successfully destroyed",
-	"data": {
+	"result": {
 		"message": MESSAGE,
 	}
 }
 ```
 
-- `MESSAGE` : The received [response message](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
+- *MESSAGE*
+
+  The received [response message](../../../technical_specifications/core/communication.md).
 
 If an error occurs in the process, the JSON structure will be :
 
@@ -119,16 +157,21 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "ERROR",
 	"message": MESSAGE,
-	"data": DATA
+	"result": ERROR
 }
 ```
 
-- `MESSAGE` : A specific message that describes the error
-- `DATA` : The data dictionary affiliated to the message content
+- *MESSAGE*
 
-If the `<session_entry_id>` does not exists, `DATA` will be an empty dictionary
+  A specific message that describes the error.
 
-If the CLI received an invalid response from the server, `DATA` will be :
+- *ERROR*
+
+  The data dictionary affiliated to the message content.
+
+If the `<session_entry_id>` does not exists, `ERROR` will be an empty dictionary.
+
+If the CLI received an invalid response from the server, `ERROR` will be :
 
 ```
 {
@@ -136,9 +179,11 @@ If the CLI received an invalid response from the server, `DATA` will be :
 }
 ```
 
-- `ERROR_DICT` : The dictionary depicting the errors detected in the response according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+- *ERROR_DICT*
 
-If the CLI received a response insinuating an error on the server side, `DATA` will be :
+  The dictionary depicting the errors detected in the response according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+
+If the CLI received a response insinuating an error on the server side, `ERROR` will be :
 
 ```
 {
@@ -146,7 +191,9 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 }
 ```
 
-- `RESPONSE` : The received response dictionary as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
+- *RESPONSE*
+
+  The received response dictionary as described in the technical specifications [Communication section](../../../technical_specifications/core/communication.md).
 
 ### `stat` sub-command
 
@@ -156,15 +203,20 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 {
 	"status": "OK",
 	"message": "Server statistics",
-	"data": {
+	"result": {
 		"message": MESSAGE,
-		SERVER_RESPONSE_DATA_DICTIONARY
+		"data": DATA
 	}
 }
 ```
 
-- `MESSAGE` : The received [response message](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
-- `SERVER_RESPONSE_DATA_DICTIONARY` : The `data` dictionary of the received request as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
+- *MESSAGE*
+
+  The received [response message](../../../technical_specifications/core/communication.md).
+
+- *DATA*
+
+  The `data` dictionary of the received request as described in the technical specifications [Communication section](../../../technical_specifications/core/communication.md).
 
 If an error occurs in the process, the JSON structure will be :
 
@@ -172,12 +224,17 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "ERROR",
 	"message": MESSAGE,
-	"data": DATA
+	"result": DATA
 }
 ```
 
-- `MESSAGE` : A specific message that describes the error
-- `DATA` : The data dictionary affiliated to the message content
+- *MESSAGE*
+
+  A specific message that describes the error.
+
+- *DATA*
+
+  The data dictionary affiliated to the message content.
 
 If the CLI received an invalid response from the server, `DATA` will be :
 
@@ -187,7 +244,9 @@ If the CLI received an invalid response from the server, `DATA` will be :
 }
 ```
 
-- `ERROR_DICT` : The dictionary depicting the errors detected in the response according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+- *ERROR_DICT*
+
+  The dictionary depicting the errors detected in the response according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
 If the CLI received a response insinuating an error on the server side, `DATA` will be :
 
@@ -197,7 +256,9 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 }
 ```
 
-- `RESPONSE` : The received response dictionary as described in the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format).
+- *RESPONSE*
+
+  The received response dictionary as described in the technical specifications [Communication section](../../../technical_specifications/core/communication.md).
 
 ### `session` sub-command
 
@@ -207,13 +268,15 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 {
 	"status": "OK",
 	"message": "Recorded entries ID",
-	"data": {
+	"result": {
 		"entry_list": ENTRY_LIST
 	}
 }
 ```
 
-- `ENTRY_LIST` : The recorded entries list
+- *ENTRY_LIST*
+
+  The recorded entries list.
 
 `anwdlclient session -p` with the `--json` parameter will result in :
 
@@ -221,7 +284,7 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 {
 	"status": "OK",
 	"message": "Entry ID content",
-	"data": {
+	"result": {
 		"created": CREATION_TIMESTAMP,
         "server_ip": SERVER_IP,
         "server_port": SERVER_PORT,
@@ -231,11 +294,25 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 }
 ```
 
-- `CREATION_TIMESTAMP` : The entry creation timestamp
-- `SERVER_IP` : The server IP
-- `SERVER_PORT` : The server listen port
-- `CONTAINER_UUID` : The container UUID
-- `CLIENT_TOKEN` : The affiliated client token
+- *CREATION_TIMESTAMP*
+
+  The entry creation timestamp.
+
+- *SERVER_IP*
+
+  The server IP.
+
+- *SERVER_PORT*
+
+  The server listen port.
+
+- *CONTAINER_UUID*
+
+  The container UUID.
+
+- *CLIENT_TOKEN*
+
+  The affiliated client token.
 
 `anwdlclient session -d` with the `--json` parameter will result in :
 
@@ -243,7 +320,7 @@ If the CLI received a response insinuating an error on the server side, `DATA` w
 {
 	"status": "OK",
 	"message": "Entry ID was deleted",
-	"data": {}
+	"result": {}
 }
 ```
 
@@ -253,12 +330,17 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "ERROR",
 	"message": MESSAGE,
-	"data": DATA
+	"result": DATA
 }
 ```
 
-- `MESSAGE` : A specific message that describes the error
-- `DATA` : The data dictionary affiliated to the message content
+- *MESSAGE*
+
+  A specific message that describes the error.
+
+- *DATA*
+
+  The data dictionary affiliated to the message content.
 
 ### `container` sub-command
 
@@ -268,13 +350,15 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "Recorded entries ID",
-	"data": {
+	"result": {
 		"entry_list": ENTRY_LIST
 	}
 }
 ```
 
-- `ENTRY_LIST` : The recorded entries list
+- *ENTRY_LIST*
+
+  The recorded entries list.
 
 `anwdlclient container -p` with the `--json` parameter will result in :
 
@@ -282,7 +366,7 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "Entry ID content",
-	"data": {
+	"result": {
 		"created": CREATION_TIMESTAMP,
         "server_ip": SERVER_IP,
         "server_port": SERVER_PORT,
@@ -293,12 +377,29 @@ If an error occurs in the process, the JSON structure will be :
 }
 ```
 
-- `CREATION_TIMESTAMP` : The entry creation timestamp
-- `SERVER_IP` : The server IP
-- `SERVER_PORT` : The server listen port
-- `CONTAINER_USERNAME` : The container SSH username
-- `CONTAINER_PASSWORD` : The container SSH password
-- `CONTAINER_LISTEN_PORT` : The container SSH listen port
+- *CREATION_TIMESTAMP*
+
+  The entry creation timestamp.
+
+- *SERVER_IP*
+
+  The server IP.
+
+- *SERVER_PORT*
+
+  The server listen port.
+
+- *CONTAINER_USERNAME*
+
+  The container SSH username.
+
+- *CONTAINER_PASSWORD*
+
+  The container SSH password.
+
+- *CONTAINER_LISTEN_PORT*
+
+  The container SSH listen port.
 
 `anwdlclient container -d` with the `--json` parameter will result in :
 
@@ -306,7 +407,7 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "Entry ID was deleted",
-	"data": {}
+	"result": {}
 }
 ```
 
@@ -316,12 +417,17 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "ERROR",
 	"message": MESSAGE,
-	"data": DATA
+	"result": DATA
 }
 ```
 
-- `MESSAGE` : A specific message that describes the error
-- `DATA` : The data dictionary affiliated to the message content
+- *MESSAGE*
+
+  A specific message that describes the error.
+
+- *DATA*
+
+  The data dictionary affiliated to the message content.
 
 ### `access-tk` sub-command
 
@@ -331,13 +437,15 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "Recorded entries ID",
-	"data": {
+	"result": {
 		"entry_list": ENTRY_LIST
 	}
 }
 ```
 
-- `ENTRY_LIST` : The recorded entries list
+- *ENTRY_LIST*
+
+  The recorded entries list.
 
 `anwdlclient container -a` with the `--json` parameter will result in :
 
@@ -345,13 +453,15 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "New token entry created",
-	"data": {
+	"result": {
 		"entry_id": ENTRY_ID
 	}
 }
 ```
 
-- `ENTRY_ID` : The created entry ID
+- *ENTRY_ID*
+
+  The created entry ID.
 
 `anwdlclient container -p` with the `--json` parameter will result in :
 
@@ -359,7 +469,7 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "Entry ID content",
-	"data": {
+	"result": {
 		"created": CREATION_TIMESTAMP,
         "server_ip": SERVER_IP,
         "server_port": SERVER_PORT,
@@ -368,10 +478,21 @@ If an error occurs in the process, the JSON structure will be :
 }
 ```
 
-- `CREATION_TIMESTAMP` : The entry creation timestamp
-- `SERVER_IP` : The server IP
-- `SERVER_PORT` : The server listen port
-- `ACCESS_TOKEN` : The affiliated access_token
+- *CREATION_TIMESTAMP*
+
+  The entry creation timestamp.
+
+- *SERVER_IP*
+
+  The server IP.
+
+- *SERVER_PORT*
+
+  The server listen port.
+
+- *ACCESS_TOKEN*
+
+  The affiliated access_token.
 
 `anwdlclient container -d` with the `--json` parameter will result in :
 
@@ -379,7 +500,7 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "Entry ID was deleted",
-	"data": {}
+	"result": {}
 }
 ```
 
@@ -389,12 +510,17 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "ERROR",
 	"message": MESSAGE,
-	"data": DATA
+	"result": DATA
 }
 ```
 
-- `MESSAGE` : A specific message that describes the error
-- `DATA` : The data dictionary affiliated to the message content
+- *MESSAGE*
+
+  A specific message that describes the error.
+
+- *DATA*
+
+  The data dictionary affiliated to the message content.
 
 ### `regen-rsa` sub-command
 
@@ -404,10 +530,12 @@ If an error occurs in the process, the JSON structure will be :
 {
 	"status": "OK",
 	"message": "RSA keys re-generated",
-	"data": {
+	"result": {
 		"fingerprint": FINGERPRINT
 	}
 }
 ```
 
-- `FINGERPRINT` : The new generated public key's SHA256 digest
+- *FINGERPRINT*
+
+  The new generated public key's SHA256 digest.

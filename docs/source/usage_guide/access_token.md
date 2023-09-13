@@ -2,12 +2,14 @@
 
 ----
 
-The Anweddol server implementation can restrict its utilization by using the `tools` [Access token feature](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/tools/access_token.html) for client authentication.
+The Anweddol server implementation can restrict its utilization by using the `tools` [Access token feature](../technical_specifications/tools/access_token.html) for client authentication.
 
 An access token is a url-safe 124 characters long used on the implementation to restrict access.
 These tokens are stored in a SQLite database file on the system.
 
-**NOTE** : There is only one token for one client, since a client cannot store 2 tokens for one same server.
+```{note}
+There is only one token for one client, since a client cannot store 2 tokens for one same server.
+```
 
 ## List recorded tokens
 

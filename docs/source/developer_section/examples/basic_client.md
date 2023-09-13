@@ -13,20 +13,18 @@ from anwdlclient.core.client import (
 SERVER_IP = "SERVER_IP"
 
 print(f"Connecting to {SERVER_IP} ...")
-client = ClientInterface(server_ip=SERVER_IP)
+with ClientInterface(server_ip=SERVER_IP) as client:
+	print("Sending STAT request ...")
+	client.sendRequest(REQUEST_VERB_STAT)
 
-print("Sending STAT request ...")
-client.sendRequest(REQUEST_VERB_STAT)
-response = client.recvResponse()
+	is_response_valid, response_content, response_errors = client.recvResponse()
 
-if response[1]["success"]:
-	print("The server is up, running since {} seconds with {} containers available.\n".format(
-		response[1]["data"].get("uptime"),
-		response[1]["data"].get("available"),
-	))
+	if is_response_valid:
+		print(
+			f"The server is up, running since {response_content['data'].get('uptime')} seconds."
+		)
 
-else:
-	print("An error occured : {}\n".format(response[1]["message"]))
+	else:
+		print(f"Received invalid response : {response_errors}\n")
 
-client.closeConnection()
 ```
