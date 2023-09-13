@@ -2,89 +2,112 @@
 
 ---
 
-> Normalized request / response values and formats
+## Request and response formatting
 
-> Package `anwdlclient.core.sanitize`
+### Verify a response content
 
-## Constants
-
-None
-
-## Functions
-
-```
-verifyResponseContent(response_dict: dict) -> tuple
+```{function} anwdlclient.core.sanitize.verifyResponseContent(response_dict)
 ```
 
-> Check if a response dictionary is a valid normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format)
+Check if a response dictionary is a valid normalized [Response format](../../../technical_specifications/core/communication.md).
 
-_Parameters_ :
+**Parameters** :
 
-- `response_dict` : The response dictionary
+> ```{attribute} response_dict
+> > Type : dict
+> 
+> The response dictionary to verify.
+> ```
 
-_Return value_ :
+**Return value** :
 
-- A tuple representing the verification results : 
+> A tuple representing the verification results : 
 
-```
-(
-	True, 
-	sanitized_response_dictionary
-)
-```
+> ```
+> (
+> 	True, 
+> 	sanitized_response_dictionary
+> )
+> ```
 
-if the `response_dict` is a valid normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format), 
+> if the `response_dict` is a valid normalized [Response format](../../../technical_specifications/core/communication.md), 
 
-```
-(
-	False, 
-	errors_dictionary
-)
-```
+> ```
+> (
+> 	False, 
+> 	errors_dictionary
+> )
+> ```
 
-otherwise.
+> otherwise.
 
-- `sanitized_response_dictionary` : The sanitized response as a normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format) dictionary.
-- `errors_dictionary` : A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+> - *sanitized_response_dictionary* (Type : dict)
+> 
+>   The sanitized response as a normalized [Response format](../../../technical_specifications/core/communication.md) dictionary.
+> 
+> - *errors_dictionary* (Type : dict)
+> 
+>   A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
 
-**NOTE** : The method `verifyResponseContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (See the technical specifications [Sanitization section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#sanitization) to learn more).
-
----
-
-```
-makeRequest(verb: str, parameters: dict = {}) -> tuple:
-```
-
-> Make a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary
-
-_Parameters_ :
-
-- `verb` : The verb to send
-- `parameters` : The parameters to send. The content must be an empty dict or a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format).
-
-_Return value_ : 
-
-- A tuple representing a valid [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary : 
-
-```
-(
-	True, 
-	request_dictionary
-)
+```{warning} 
+The method `verifyResponseContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (See the technical specifications [Sanitization section](../../../technical_specifications/core/communication.md) to learn more).
 ```
 
-if the operation succeeded, 
+### Make a normalized request
 
-```
-(
-	False,
-	errors_dictionary
-)
+```{function} anwdlclient.core.sanitize.makeRequest(verb, parameters)
 ```
 
-otherwise.
+Make a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary.
 
-- `request_dictionary` : The request dictionary as a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format).
-- `errors_dictionary` : A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+**Parameters** :
 
-**NOTE** : The `sendRequest` method from `ClientInterface` wraps this function in its process. Like `verifyResponseContent`, the method only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
+> ```{attribute} verb
+> > Type : str
+> 
+> The verb to send.
+> ```
+
+> ```{attribute} parameters
+> > Type : dict
+> 
+> The parameters to send. The content must be an empty dict or a normalized [Request format](../../../technical_specifications/core/communication.md).
+> ```
+
+**Return value** : 
+
+> A tuple representing a valid [Request format](../../../technical_specifications/core/communication.md) dictionary : 
+
+> ```
+> (
+> 	True, 
+> 	request_dictionary
+> )
+> ```
+
+> if the operation succeeded, 
+
+> ```
+> (
+> 	False,
+> 	errors_dictionary
+> )
+> ```
+
+> otherwise.
+
+> - *request_dictionary* (Type : dict)
+> 
+>   The request dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
+> 
+> - *errors_dictionary* (Type : dict)
+> 
+>   A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+
+```{note} 
+The `sendRequest` method from `ClientInterface` wraps this function in its process. 
+```
+
+```{warning}
+Like `verifyResponseContent`, the method only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms.
+```

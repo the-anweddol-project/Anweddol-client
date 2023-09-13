@@ -1,304 +1,357 @@
 # Client
----
-
-> Client management features
-
-> Package `anwdlclient.core.client`
-
-## Constants
-
-Default values :
-
-| Name                         | Value   | Description                                           |
-| -------------------------  - | ------- | ----------------------------------------------------- |
-| `DEFAULT_SERVER_LISTEN_PORT` | `6150`  | The default server listen port                        |
-| `DEFAULT_CLIENT_TIMEOUT`     | `10`    | The default client timeout                            |
-| `DEFAULT_AUTO_CONNECT`       | `True`  | Automatically connect to the server at initialization |
-| `DEFAULT_RECEIVE_FIRST`      | `True`  | Receive the public key first by default               |
-
-Constants definition :
-
-| Name                           | Value                  | Definition                                                                 |
-| ------------------------------ | ---------------------- | -------------------------------------------------------------------------- |
-| `MESSAGE_OK`                   | `"1"`                  | Message used during key exchange to transmit a state or an acknowledgement |
-| `MESSAGE_NOK`                  | `"0"`                  | Message used during key exchange to transmit a state or an acknowledgement |
-| `REQUEST_VERB_CREATE`          | `"CREATE"`             | The verb indicating the intent to create a new container                   |
-| `REQUEST_VERB_DESTROY`         | `"DESTROY"`            | The verb indicating the intent to destroy a container                      |
-| `REQUEST_VERB_STAT`            | `"STAT"`               | The verb indicating the intent to get the server runtime statistics        |
-| `RESPONSE_MSG_OK`              | `"OK"`                 | Message specifying that the request was correctly handled by the server    |
-| `RESPONSE_MSG_BAD_AUTH`        | `"Bad authentication"` | Message specifying that invalid credentials were given to the server       |
-| `RESPONSE_MSG_BAD_REQ`         | `"Bad request"`        | Message specifying that the received request is malformed                  |
-| `RESPONSE_MSG_REFUSED_REQ`     | `"Refused request"`    | Message specifying that the received request was refused                   |
-| `RESPONSE_MSG_UNAVAILABLE`     | `"Unavailable"`        | Message specifying that the server is currently unavailable                |
-| `RESPONSE_MSG_INTERNAL_ERROR`  | `"Internal error"`     | Message specifying that the server experienced an internal error           |
-
-## Classes
-
-### `ClientInterface`
-
-#### Definition
-
-```
-class ClientInterface(
-	server_ip: str = None,
-	server_listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
-	timeout: int = DEFAULT_CLIENT_TIMEOUT,
-	rsa_wrapper: RSAWrapper = None,
-	aes_wrapper: AESWrapper = None,
-	auto_connect: bool = DEFAULT_AUTO_CONNECT,
-)
-```
-
-> Represents a client to interact with servers
-
-_Parameters_ :
-
-- `server_ip` : The server IP to connect to
-- `server_port` : The server listen port
-- `timeout` : The timeout to set
-- `rsa_wrapper` : The `RSAWrapper` instance that will be used on the client
-- `aes_wrapper` : The `AESWrapper` instance that will be used on the client
-- `auto_connect`: Automatically connect to the specified server coordinates
-
-**NOTE** : The connection is automatically closed when the `__del__` method is called.
-
-#### Methods
-
-```
-isClosed() -> bool
-```
-
-> Check if the client is closed or not
-
-_Parameters_ : 
-
-- None
-
-_Return value_ :
-
-- `True` if the client is closed, `False` otherwise
-
-```
-getSocketDescriptor() -> socket.socket
-```
-
-> Get the client socket descriptor
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- The socket descriptor of the client
 
 ---
 
+## class *ClientInterface*
+
+### Definition
+
+```{class} anwdlclient.core.client.ClientInterface(server_ip, server_listen_port, timeout, rsa_wrapper, aes_wrapper, auto_connect)
 ```
-getRSAWrapper() -> RSAWrapper
+
+Represents a client to interact with servers.
+
+```{tip}
+This class can be used in a 'with' statement.
 ```
 
-> Get the client `RSAWrapper` instance
+**Parameters** :
 
-_Parameters_ :
+> ```{attribute} server_ip
+> > Type : str
+> 
+> The server IP to connect to. Default is `None`.
+> ```
 
-- None
+> ```{attribute} server_port
+> > Type : int
+> 
+> The remote server listen port. Default is `6150`.
+> ```
 
-_Return value_:
+> ```{attribute} timeout
+> > Type : int
+> 
+> The timeout to set. Default is `None`.
+> ```
 
-- The `RSAWrapper` instance of the client
+> ```{attribute} rsa_wrapper
+> > Type : `RSAWrapper`
+> 
+> The `RSAWrapper` instance that will be used on the client.
+> ```
+
+> ```{attribute} aes_wrapper
+> > Type : `AESWrapper`
+> 
+> The `AESWrapper` instance that will be used on the client.
+> ```
+
+> ```{attribute} connect
+> > Type : bool
+> 
+> `True` to connect to the specified server coordinates on initialization, `False` otherwise. Default is `True`.
+> ```
+
+```{note}
+The connection is closed with the `closeConnection()` method when the `__del__` method is called.
+```
+
+```{warning}
+If the parameter `connect` is set to `True` and no value is passed on the parameter `server_ip`, no connection will be made on initialization.
+```
+
+### Methods
+
+```{classmethod} isClosed()
+```
+
+Check if the client socket is closed or not.
+
+**Parameters** : 
+
+> None
+
+**Return value** :
+
+> `True` if the client socket is closed, `False` otherwise.
 
 ---
 
+```{classmethod} getSocketDescriptor()
 ```
-getAESWrapper() -> AESWrapper
-```
 
-> Get the client `AESWrapper` instance
+Get the client socket descriptor
 
-_Parameters_ :
+**Parameters** :
 
-- None
+> None.
 
-_Return value_:
+*Return value* :
 
-- The `AESWrapper` instance of the client
+> The socket descriptor of the client.
 
 ---
 
+```{classmethod} getRSAWrapper()
 ```
-setRSAWrapper(rsa_wrapper: RSAWrapper) -> None
-```
 
-> Set the client `RSAWrapper` instance
+Get the client `RSAWrapper` instance.
 
-_Parameters_ :
+**Parameters** :
 
-- `rsa_wrapper` : The `RSAWrapper` instance to set
+> None.
 
-_Return value_ :
+**Return value**:
 
-- None
+> The `RSAWrapper` instance of the client.
 
 ---
 
+```{classmethod} getAESWrapper()
 ```
-setAESWrapper(aes_wrapper: AESWrapper) -> None
-```
 
-> Set the client `AESWrapper` instance
+Get the client `AESWrapper` instance.
 
-_Parameters_ :
+**Parameters** :
 
-- `aes_wrapper` : The `AESWrapper` instance to set
+> None.
 
-_Return value_ :
+**Return value**:
 
-- None
+> The `AESWrapper` instance of the client.
 
 ---
 
+```{classmethod} setRSAWrapper(rsa_wrapper)
 ```
-connectServer(receive_first: bool = DEFAULT_RECEIVE_FIRST) -> None
-```
 
-> Establish a connection with the server
+Set the client `RSAWrapper` instance.
 
-_Paramaters_ : 
+**Parameters** :
 
-- `receive_first` : Receive the RSA and AES keys first
+> ```{attribute} rsa_wrapper
+> > Type : `RSAWrapper`
+> 
+> The `RSAWrapper` instance to set.
+> ```
 
-_Return value_ :
+**Return value** :
 
-- None
-
-_Possible raise classes_ :
-
-- `RuntimeError`
-
-**NOTE** : When this method is called, the RSA and AES keys will be automatically exchanged (see the technical specifications [Communication section](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#encryption)).
+> `None`.
 
 ---
 
+```{classmethod} setAESWrapper(aes_wrapper)
 ```
-sendPublicRSAKey() -> None
-```
 
-> Send the local public RSA key
+Set the client `AESWrapper` instance.
 
-_Parameters_ :
+**Parameters** :
 
-- None
+> ```{attribute} aes_wrapper
+> > Type : `AESWrapper`
+> 
+> The `AESWrapper` instance to set.
+> ```
 
-_Return value_ :
+**Return value** :
 
-- None
-
-_Possible raise classes_ :
-
-- `RuntimeError`
+> `None`.
 
 ---
 
+```{classmethod} connectServer(receive_first)
 ```
-recvPublicRSAKey() -> None
+
+Establish a connection with the server.
+
+**Paramaters** : 
+
+> ```{attribute} receive_first
+> > Type : bool
+> 
+> `True` to receive the RSA and AES keys first, `False` otherwise. Default is `False`.
+> ```
+
+**Return value** :
+
+> `None`.
+
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+>
+> Raised in this method if the client is already connected.
+> ```
+
+```{note}
+When this method is called, the RSA and AES keys will be automatically exchanged (see the technical specifications [Communication section](../../../technical_specifications/core/communication.md) to learn more).
 ```
-
-> Receive the client's public RSA key
-
-_Parameters_ :
-
-- None
-
-_Return value_ :
-
-- None
-
-_Possible raise classes_ :
-
-- `RuntimeError`
-- `ValueError`
 
 ---
 
+```{classmethod} sendPublicRSAKey()
 ```
-sendAESKey() -> None
-```
 
-> Send the local AES key
+Send the local public RSA key.
 
-_Parameters_ :
+**Parameters** :
 
-- None
+> None.
 
-_Return value_ :
+**Return value** :
 
-- None
+> `None`.
 
-_Possible raise classes_ :
+**Possible raise classes** :
 
-- `RuntimeError`
-- `ValueError`
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the client is closed, or that the server refused the sent packet or the RSA key.
+> ```
 
 ---
 
+```{classmethod} recvPublicRSAKey() -> None
 ```
-recvAESKey() -> None
-```
 
-> Receive the local AES key
+Receive the server public RSA key.
 
-_Parameters_ :
+**Parameters** :
 
-- None
+> None.
 
-_Return value_ :
+**Return value** :
 
-- None
+> `None`.
 
-_Possible raise classes_ :
+**Possible raise classes** :
 
-- `RuntimeError`
-- `ValueError`
+> ```{exception} ValueError
+> An error occured due to an invalid value set before or during the method call.
+> 
+> Raised in this method if an invalid key length has been received from the server.
+> ```
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the client is not connected to the server.
+> ```
 
 ---
 
+```{classmethod} sendAESKey()
 ```
-sendRequest(verb: str, parameters: dict = {}) -> None
-```
 
-> Send a request to the server
+Send the local AES key to the server.
 
-_Parameters_ : 
+**Parameters** :
 
-- `verb` : The verb to send
-- `parameters` : The parameters dictionary to send. The content must be an empty dict or a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary.
+> None.
 
-_Return value_ :
+**Return value** :
 
-- None
+> `None`.
 
-_Possible raise classes_ :
+**Possible raise classes** :
 
-- `ValueError`
-- `RuntimeError`
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the client is not connected to the server.
+> ```
 
 ---
 
+```{classmethod} recvAESKey()
 ```
-recvResponse() -> dict
+
+Receive the AES key from the server.
+
+**Parameters** :
+
+> None
+
+**Return value** :
+
+> `None`.
+
+**Possible raise classes** :
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the client is not connected to the server.
+> ```
+
+---
+
+```{classmethod} sendRequest(verb, parameters)
 ```
 
-> Receive a response from the server
+Send a request to the server.
 
-_Parameters_ :
+**Parameters** : 
 
-- None
+> ```{attribute} verb
+> > Type : str
+> 
+> The verb to send.
+> ```
 
-_Return value_ :
+> ```{attribute} parameters
+> > Type : dict
+> 
+> The parameters dictionary to send. The content must be an empty dict or a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary. Default is an empty dict.
+> ```
 
-- The received response  as a normalized [Response format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#response-format) dictionary
+**Return value** :
 
-_Possible raise classes_ :
+> `None`.
 
-- `RuntimeError`
+**Possible raise classes** :
+
+> ```{exception} ValueError
+> An error occured due to an invalid value set before or during the method call.
+> 
+> Raised in this method if the specified values are invalid.
+> ```
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the client is not connected to the server.
+> ```
+
+---
+
+```{classmethod} recvResponse()
+```
+
+Receive a response from the server.
+
+**Parameters** :
+
+> None.
+
+**Return value** :
+
+> The received response as a normalized [Response format](../../../technical_specifications/core/communication.md) dictionary.
+
+**Possible raise classes** :
+
+> ```{exception} ValueError
+> An error occured due to an invalid value set before or during the method call.
+> 
+> Raised in this method if an invalid packet length has been received from the server.
+> ```
+
+> ```{exception} RuntimeError
+> An error occured due to a failed internal action.
+> 
+> Raised in this method if the client is not connected to the server.
+> ```

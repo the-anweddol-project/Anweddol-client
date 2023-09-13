@@ -1,17 +1,15 @@
 # Communication
----
 
-In this section, you will learn about the different communications kinds and formats related to the Anweddol client.
+---
 
 ## Format
 
-Requests and responses sent between the client and the server are JSON structures.
-	-> A widely used data format, cross-platform and easily manipulable.
+Requests and responses sent between the client and the server are JSON structures : A widely used data format, cross-platform and easily manipulable.
 
-Before sending anything to a peer, the size of the packet is sent in an 8 byte message, padded with '=' characters : 
+Before sending anything, the size of the packet is sent in an 8 byte message, padded with `'='` characters : 
 
 | Message         | Length        | Padded message length       |
-| --------------- | ------------- |---------------------------- |
+| --------------- | ------------- | --------------------------- |
 | `"hello world"` | 11 characters | `"11======"` (8 characters) |
 
 Thus, the native theorical maximum packet size is 99 999 999 bytes.
@@ -27,19 +25,27 @@ Here is a typical request structure that a client will send :
 }
 ```
 
- -> `VERB` : Like an HTTP request, the verb depicts the action to execute on the server side. There is 3 natively supported verbs :
+- *VERB*
 
-- `"CREATE"`
-- `"DESTROY"`
-- `"STAT"`
+  Like an HTTP request, the verb depicts the action to execute on the server side. There is 3 natively supported verbs :
 
-`"CREATE"` defines the intent to create a new container.
-`"DESTROY"` defines the intent to destroy a previously created container.
-`"STAT"` defines the intent to gather information about a server runtime.
+	- `"CREATE"`
 
--> `PARAMETERS` : This is the section reserved for any kind of parameters used to provide additional information in a request.
+	  Defines the intent to create a new container.
 
-> Only the `"DESTROY"` request requires some parameters to authenticate the client (see the [Authentication](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/client_authentication.html) section to learn more).
+	- `"DESTROY"`
+
+	  Defines the intent to destroy a previously created container.
+
+	- `"STAT"`
+
+	  Defines the intent to gather information about a server runtime.
+
+  Note that a server implementation can handle custom verbs.
+
+- *PARAMETERS*
+
+  This is the section reserved for any kind of parameters used to provide additional information in a request.
 
 ## Response format
 
@@ -53,18 +59,17 @@ Here is a typical response structure that a client will receive :
 }
 ```
 
--> `SUCCESS` : The success defines the current state of the request on the server.
-It is actually a boolean value (`True` or `False`) : 
+- *SUCCESS*
+  
+  Boolean value that defines the current state of the request processing on the server. `True` if the request was processed withour errors, `False` otherwise.
 
-- `True` : The request was successfully satisfied.
-- `False` : There was an error during the processing of the request.
+- *MESSAGE*
 
--> `MESSAGE` : The additional information coming along with the success of the response.
-It can be anything that explains what happened on the server side (see the 'Error handling' point below).
+  The additional information coming along with the response. It can be anything that explains what happened on the server side if an error occured or not (see the 'Error handling' point below).
 
--> `DATA` : The data section, reserved for returned parameters.
+- *DATA*
 
-See the *Sanitization* section below to know how the data is sanitized on the client-side.
+  The data section, reserved for parameters returned by the server after the request processing.
 
 ## Error handling
 
@@ -91,12 +96,11 @@ Note that messages depicting an error may come with an additional explanation of
 
 ### Encryption
 
-For security and integrity reasons, requests and responses are encrypted in AES 256 CBC.
-Each AES key and Initialization Vectors are different for every client connection session.
+For security and integrity reasons, requests and responses are encrypted in AES 256 CBC. Each AES key and Initialization Vectors are different for every session.
 
-RSA keys length is 4096 bytes. The RSA implementation is used to send the connection session AES key to the client securely.
+RSA keys length is 4096 bytes by default, they are used to send the session AES key to the client securely.
 
-Here is a visual example of how the keys are exchanged with a server : 
+Here is a visual example of how the keys are exchanged with a client : 
 
 > Bold text mean RSA encrypted text
 
@@ -114,14 +118,17 @@ Here is a visual example of how the keys are exchanged with a server :
 |o  | **B AES Key**    |<  |
 |>  | validation       |o  | 
 
-*'->' symbol means 'send'  and 'o' symbol means 'receive'* 
+```{note}
+Since the block size is limited to 512 bytes with default parameters for RSA instances, it is not suitable to send or receive data in a client/server communication context. That's why an AES cryptosystem implementation exists to fix the problem.
+```
 
 ### Sanitization
 
 Requests and responses are sanitized upon sending and receiving at each end.
-Here is the raw [Cerberus](https://docs.python-cerberus.org/en/stable/index.html) validation scheme used to verify the format and content : 
 
-**Request**
+Here are the raw [Cerberus](https://docs.python-cerberus.org/en/stable/index.html) validation schemes used to verify the format and content of requests and responses : 
+
+#### Request cerberus validation scheme
 
 ```
 {
@@ -151,7 +158,7 @@ Here is the raw [Cerberus](https://docs.python-cerberus.org/en/stable/index.html
 }
 ```
 
-**Response**
+#### Response cerberus validation scheme
 
 ```
 {

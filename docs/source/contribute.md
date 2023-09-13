@@ -2,9 +2,7 @@
 
 ----
 
-Thank you for taking the time to contribute to the Anweddol project!
-
-In this guide you will retrieve the contribution guidelines.
+Thank you for taking the time to contribute to the Anweddol project! In this guide you will retrieve the contribution guidelines.
 
 ## Getting started
 

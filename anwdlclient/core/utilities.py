@@ -28,18 +28,7 @@ def isPortBindable(port):
 
 
 def isSocketClosed(socket_descriptor: socket.socket) -> bool:
-    try:
-        data = socket_descriptor.recv(16, socket.MSG_DONTWAIT | socket.MSG_PEEK)
-        return len(data) == 0
-
-    except OSError:
-        return False
-
-    except BlockingIOError:
-        return False
-
-    except ConnectionResetError:
-        return True
+    return socket_descriptor.fileno() == -1
 
 
 def isValidIP(ip: str) -> bool:

@@ -1,9 +1,11 @@
 # Client usage
 ---
 
-> You need to follows the [Installation](installation) section before continuing this tutorial.
+```{warning}
+You need to follows the [Installation](installation) section before continuing this tutorial.
+```
 
-Here is a typical tutorial on how to interact with a server, here 156.45.5.1.
+Here is a typical tutorial on how to interact with a server.
 
 ## Send a STAT request to a server
 
@@ -12,7 +14,7 @@ If you want to create a container on a server, you first need to ensure if there
 Send a STAT request by executing : 
 
 ```
-$ anwdlclient stat 156.45.5.1
+$ anwdlclient stat <server_ip>
 ```
 
 The server informations will be displayed.
@@ -22,7 +24,7 @@ The server informations will be displayed.
 If there is enough containers left, you can send a CREATE request to the server : 
 
 ```
-$ anwdlclient create 156.45.5.1
+$ anwdlclient create <server_ip>
 ```
 
 A container can take some time to create depending of the server's capacities, wait for the response.
@@ -33,14 +35,13 @@ When the response is received, grab the new created credentials entry ID and exe
 $ anwdlclient container -p <entry_id>
 ```
 
-to get the clear container SSH credentials to use.
-Next, you can eventually establish a shell to it : 
+to get the clear container SSH credentials to use. Next, you can establish a shell to it : 
 
 ```
-$ ssh <container_username>@<container_ip> -p <container_listen_port>
+$ ssh <container_username>@<server_ip> -p <container_listen_port>
 ```
 
-Copy and paste the password, and you have now a shell on the container.
+Copy and paste the password, and you have now an SSH shell on the container.
 
 ## Send a DESTROY request to a server
 
@@ -55,3 +56,7 @@ $ anwdlclient destroy <entry_id>
 The client will automatically fetch the server coordinates inside the specified entry, and send a DESTROY request to the server with the affiliated session credentials.
 
 The specified entry will be deleted if the request is successful.
+
+```{note}
+You can also shutdown the container domain from inside via SSH, the server will automatically destroy the container once detected as shutdown.
+```

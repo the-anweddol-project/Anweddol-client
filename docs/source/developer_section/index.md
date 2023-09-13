@@ -4,11 +4,11 @@
 
 Hello and welcome to the Anweddol client developer documentation.
 
-Here, you'll find every informations and documentation about the client API features.
+Here, you'll find every informations and documentation about the [python](https://www.python.org/) client API features.
 
-The Anweddol client is made with [python](https://www.python.org/).
-
-**NOTE** : At the root of `anwdlclient`, there is the CLI source code : They are not meant to be used on an external program since it's the client implementation's code itself.
+```{note}
+At the root of `anwdlclient`, there is the CLI source code : They are not meant to be used on an external program since it's the client implementation's code itself.
+```
 
 ## Examples
 
@@ -35,11 +35,12 @@ examples/custom_verb_usage
 ## API references
 
 Learn about every features that the `core` can provide.
-You can see the *Technical specificatons* section to get every informations on how the Anweddol client works.
 
 ### Core features
 
 The core features, also called `core`, are every needed functionnalities that an Anweddol client must have in order to correctly communicate with servers.
+
+The `ClientInterface` class is the main client which encompasses all these features into a single and easy-to-use object : 
 
 ```{toctree}
 ---
@@ -49,6 +50,8 @@ includehidden:
 
 api_references/core/client
 ```
+
+If you want to make a more complex use of Anweddol, you can retrieve every others `core` features documentations and references below : 
 
 ```{toctree}
 ---

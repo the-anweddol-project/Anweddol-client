@@ -9,10 +9,9 @@
 from subprocess import Popen, PIPE
 from setuptools import setup
 import getpass
-import shutil
 import os
 
-VERSION = "1.1.3"
+VERSION = "2.0.0"
 
 
 def executeCommand(command):
@@ -39,48 +38,36 @@ print("[SETUP] Creating configuration file ...")
 if os.path.exists(anweddol_base_path + "config.yaml"):
     os.remove(anweddol_base_path + "config.yaml")
 
-# Replace arbitrary values in the resource config file before copy it on the system
-with open(
-    f"{os.path.dirname(os.path.realpath(__file__))}{local_ifs}resources{local_ifs}config.yaml",
-    "r",
-) as fd:
-    data = (
-        fd.read()
-        .replace(
-            "session_credentials_path",
-            anweddol_base_path + f"credentials{local_ifs}session_credentials.db",
-        )
-        .replace(
-            "container_credentials_path",
-            anweddol_base_path + f"credentials{local_ifs}container_credentials.db",
-        )
-        .replace(
-            "access_token_path",
-            anweddol_base_path + f"credentials{local_ifs}access_token.db",
-        )
-        .replace("rsa_keys_path", anweddol_base_path + f"rsa_keys{local_ifs}")
-    )
+# Manually assemble the configuration file content depending of the environment
+config_file_content = """# Configuration file for Anweddol client
+#
+# This document contains all of the configurations that the client 
+# will be using. Comment or un-comment variables to change their 
+# default values. Refer to the units explanations below, 
+# and the official anweddol client documentation.
 
-    with open(anweddol_base_path + "config.yaml", "w") as fd:
-        fd.write(data)
+# Credentials database path
+session_credentials_db_file_path: {}
+container_credentials_db_file_path: {}
+access_token_db_file_path: {}
 
-print("[SETUP] Creating uninstallation script ...")
-if os.name == "nt":
-    shutil.copyfile(
-        os.path.dirname(os.path.realpath(__file__))
-        + f"{local_ifs}resources{local_ifs}anwdlclient-uninstall.bat",
-        anweddol_base_path + "anwdlclient-uninstall.bat",
-    )
+# RSA keys root path
+public_rsa_key_file_path: {}
+private_rsa_key_file_path: {}
 
-else:
-    shutil.copyfile(
-        os.path.dirname(os.path.realpath(__file__))
-        + f"{local_ifs}resources{local_ifs}anwdlclient-uninstall",
-        f"/home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall",
-    )
-    executeCommand(
-        f"/bin/chmod +x /home/{getpass.getuser()}/.local/bin/anwdlclient-uninstall"
-    )
+# Generate RSA key pair on start and ignore the stored one
+# Enabled by default for privacy matters
+enable_onetime_rsa_keys: True
+""".format(
+    f"{anweddol_base_path}credentials{local_ifs}core{local_ifs}session_credentials.db",
+    f"{anweddol_base_path}credentials{local_ifs}core{local_ifs}container_credentials.db",
+    f"{anweddol_base_path}credentials{local_ifs}access_token.db",
+    f"{anweddol_base_path}rsa_keys{local_ifs}public.pem",
+    f"{anweddol_base_path}rsa_keys{local_ifs}private.pem",
+)
+
+with open(anweddol_base_path + "config.yaml", "w") as fd:
+    fd.write(config_file_content)
 
 print("[SETUP] Installing Anweddol client ...")
 setup(
