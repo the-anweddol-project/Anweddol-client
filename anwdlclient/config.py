@@ -23,7 +23,8 @@ class ConfigurationFileManager:
             "session_credentials_db_file_path": {"type": "string", "required": True},
             "container_credentials_db_file_path": {"type": "string", "required": True},
             "access_token_db_file_path": {"type": "string", "required": True},
-            "rsa_keys_root_path": {"type": "string", "required": True},
+            "public_rsa_key_file_path": {"type": "string", "required": True},
+            "private_rsa_key_file_path": {"type": "string", "required": True},
             "enable_onetime_rsa_keys": {"type": "boolean", "required": True},
         }
 

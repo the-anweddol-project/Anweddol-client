@@ -17,9 +17,10 @@ class SessionCredentialsManager:
             session_credentials_db_path, check_same_thread=False
         )
         self.database_cursor = self.database_connection.cursor()
+        self.is_closed = False
 
         self.database_cursor.execute(
-            """CREATE TABLE IF NOT EXISTS AnweddolSessionCredentialsTable (
+            """CREATE TABLE IF NOT EXISTS AnweddolClientSessionCredentialsTable (
                 EntryID INTEGER NOT NULL PRIMARY KEY,
                 CreationTimestamp INTEGER NOT NULL,
                 ServerIP TEXT NOT NULL,
@@ -32,6 +33,16 @@ class SessionCredentialsManager:
     def __del__(self):
         self.closeDatabase()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if not self.isClosed():
+            self.closeDatabase()
+
+    def isClosed(self) -> bool:
+        return self.is_closed
+
     def getDatabaseConnection(self) -> sqlite3.Connection:
         return self.database_connection
 
@@ -40,7 +51,7 @@ class SessionCredentialsManager:
 
     def getEntryID(self, server_ip: str) -> None | int:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolSessionCredentialsTable WHERE ServerIP=?",
+            "SELECT EntryID from AnweddolClientSessionCredentialsTable WHERE ServerIP=?",
             (server_ip,),
         )
         query_result = query_cursor.fetchone()
@@ -49,7 +60,8 @@ class SessionCredentialsManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolSessionCredentialsTable WHERE EntryID=?", (entry_id,)
+            "SELECT * from AnweddolClientSessionCredentialsTable WHERE EntryID=?",
+            (entry_id,),
         )
 
         return query_cursor.fetchone()
@@ -61,7 +73,7 @@ class SessionCredentialsManager:
 
         try:
             self.database_cursor.execute(
-                """INSERT INTO AnweddolSessionCredentialsTable (
+                """INSERT INTO AnweddolClientSessionCredentialsTable (
                     CreationTimestamp, 
                     ServerIP, 
                     ServerPort, 
@@ -85,7 +97,7 @@ class SessionCredentialsManager:
 
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolSessionCredentialsTable",
+            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolClientSessionCredentialsTable",
         )
 
         return query_cursor.fetchall()
@@ -93,7 +105,7 @@ class SessionCredentialsManager:
     def deleteEntry(self, entry_id: int) -> None:
         try:
             self.database_cursor.execute(
-                "DELETE from AnweddolSessionCredentialsTable WHERE EntryID=?",
+                "DELETE from AnweddolClientSessionCredentialsTable WHERE EntryID=?",
                 (entry_id,),
             )
             self.database_connection.commit()
@@ -106,6 +118,8 @@ class SessionCredentialsManager:
         try:
             self.database_cursor.close()
             self.database_connection.close()
+            self.is_closed = True
+
         except sqlite3.ProgrammingError:
             pass
 
@@ -116,9 +130,10 @@ class ContainerCredentialsManager:
             container_credentials_db_path, check_same_thread=False
         )
         self.database_cursor = self.database_connection.cursor()
+        self.is_closed = False
 
         self.database_cursor.execute(
-            """CREATE TABLE IF NOT EXISTS AnweddolContainerCredentialsTable (
+            """CREATE TABLE IF NOT EXISTS AnweddolClientContainerCredentialsTable (
                 EntryID INTEGER NOT NULL PRIMARY KEY,
                 CreationTimestamp INTEGER NOT NULL,
                 ServerIP TEXT NOT NULL,
@@ -132,6 +147,16 @@ class ContainerCredentialsManager:
     def __del__(self):
         self.closeDatabase()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        if not self.isClosed():
+            self.closeDatabase()
+
+    def isClosed(self) -> bool:
+        return self.is_closed
+
     def getDatabaseConnection(self) -> sqlite3.Connection:
         return self.database_connection
 
@@ -140,7 +165,7 @@ class ContainerCredentialsManager:
 
     def getEntryID(self, server_ip: str) -> None | int:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolContainerCredentialsTable WHERE ServerIP=?",
+            "SELECT EntryID from AnweddolClientContainerCredentialsTable WHERE ServerIP=?",
             (server_ip,),
         )
         query_result = query_cursor.fetchone()
@@ -149,7 +174,7 @@ class ContainerCredentialsManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolContainerCredentialsTable WHERE EntryID=?",
+            "SELECT * from AnweddolClientContainerCredentialsTable WHERE EntryID=?",
             (entry_id,),
         )
 
@@ -167,7 +192,7 @@ class ContainerCredentialsManager:
 
         try:
             self.database_cursor.execute(
-                """INSERT INTO AnweddolContainerCredentialsTable (
+                """INSERT INTO AnweddolClientContainerCredentialsTable (
                     CreationTimestamp, 
                     ServerIP, 
                     ServerPort,
@@ -193,7 +218,7 @@ class ContainerCredentialsManager:
 
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolContainerCredentialsTable",
+            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolClientContainerCredentialsTable",
         )
 
         return query_cursor.fetchall()
@@ -201,7 +226,7 @@ class ContainerCredentialsManager:
     def deleteEntry(self, entry_id: int) -> None:
         try:
             self.database_cursor.execute(
-                "DELETE from AnweddolContainerCredentialsTable WHERE EntryID=?",
+                "DELETE from AnweddolClientContainerCredentialsTable WHERE EntryID=?",
                 (entry_id,),
             )
             self.database_connection.commit()
@@ -214,5 +239,7 @@ class ContainerCredentialsManager:
         try:
             self.database_cursor.close()
             self.database_connection.close()
+            self.is_closed = True
+
         except sqlite3.ProgrammingError:
             pass
