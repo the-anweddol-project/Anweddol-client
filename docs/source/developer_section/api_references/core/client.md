@@ -215,7 +215,7 @@ Send the local public RSA key.
 
 ---
 
-```{classmethod} recvPublicRSAKey() -> None
+```{classmethod} recvPublicRSAKey()
 ```
 
 Receive the server public RSA key.

@@ -54,7 +54,7 @@ Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqli
 
 ---
 
-```{classmethod} closeDatabase() -> None
+```{classmethod} closeDatabase()
 ```
 
 Close the database.
@@ -92,7 +92,7 @@ Get the entry ID of a specific IP.
 
 ---
 
-```{classmethod} getEntry(entry_id: int) -> tuple
+```{classmethod} getEntry(entry_id: int)
 ```
 
 Get entry credentials.

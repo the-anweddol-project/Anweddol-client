@@ -74,7 +74,7 @@ Get the entry ID of a specific IP.
 
 ---
 
-```{classmethod} getEntry(entry_id) -> tuple
+```{classmethod} getEntry(entry_id)
 ```
 
 Get entry credentials.
@@ -231,7 +231,7 @@ Delete an entry.
 
 ---
 
-```{classmethod} closeDatabase() -> None
+```{classmethod} closeDatabase()
 ```
 
 Close the database.
