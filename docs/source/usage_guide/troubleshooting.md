@@ -3,7 +3,7 @@
 
 Here is a list of non-exhaustive potential problems that can be encountered while using the Anweddol server : 
 
-## `Failed to ... (reason : Internal error)`
+## *Failed to [...] (reason : Internal error)*
 
 It means that the remote server is experiencing an internal problem that makes it unavailable for the corresponding request.
 
@@ -25,7 +25,7 @@ will be used for each connection rather than being regenerated.
 Be aware that doing this may lead to client recognition/tracking on the server side, and therefore infringe on your privacy.
 ```
 
-## `[Errno 113] No route to host`
+## *[Errno 113] No route to host*
 
 This error can have various origins, but here is a list of "common" origins encountered during the usage of the client : 
 
