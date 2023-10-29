@@ -11,7 +11,7 @@ from setuptools import setup
 import getpass
 import os
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 
 
 def executeCommand(command):
@@ -79,22 +79,23 @@ setup(
     description="The Anweddol client implementation",
     long_description=getReadmeContent(),
     classifiers=[
-        "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-        "Intended Audience :: Developers",
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: MIT License",
         "Intended Audience :: End Users/Desktop",
+        "Intended Audience :: Developers",
         "Programming Language :: Python :: 3",
         "Operating System :: POSIX",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS",
         "Topic :: Internet",
-        "Topic :: System :: Emulators",
     ],
-    license="GPL v3",
+    license="MIT",
     packages=["anwdlclient", "anwdlclient.core", "anwdlclient.tools"],
     install_requires=["cryptography", "cerberus", "pyyaml"],
     include_package_data=True,
     entry_points={
-        "console_scripts": ["anwdlclient = anwdlclient.cli:MainAnweddolClientCLI"],
+        "console_scripts": [
+            "anwdlclient = anwdlclient.cli:MainAnweddolClientCLI",
+        ],
     },
 )
