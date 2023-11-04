@@ -19,17 +19,33 @@ This feature is using a SQLite file to store data.
 
 ### Table representation
 
-Here is a representation of the used SQL table :
+The table used for databse instance is `AnweddolClientAccessTokenTable`.
+
+Here is its representation :
 
 | EntryID                        | CreationTimestamp   | ServerIP        | ServerPort         | AccessToken        |
 |------------------------------- | ------------------- | --------------- | ------------------ | ------------------ |
 | `INTEGER NOT NULL PRIMARY KEY` | `INTEGER NOT NULL`  | `TEXT NOT NULL` | `INTEGER NOT NULL` | `TEXT NOT NULL`    |
 
-- `EntryID` : Identifies the row
-- `CreationTimestamp` : Store the row creation timestamp
-- `ServerIP` : Store the affiliated server IP
-- `ServerPort` : Store the affiliated server listen port
-- `AccessToken` : Store the affiliated access token
+- *EntryID*
+
+  Identifies the row
+
+- *CreationTimestamp*
+
+  Store the row creation timestamp
+
+- *ServerIP*
+
+  Store the affiliated server IP
+
+- *ServerPort*
+
+  Store the affiliated server listen port
+
+- *AccessToken*
+
+  Store the affiliated access token
 
 ### Security
 

@@ -6,12 +6,13 @@
     Client installation script
 
 """
+
 from subprocess import Popen, PIPE
 from setuptools import setup
 import getpass
 import os
 
-VERSION = "2.0.1"
+VERSION = "2.1.0"
 
 
 def executeCommand(command):
@@ -86,12 +87,16 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: POSIX",
         "Operating System :: Microsoft :: Windows",
-        "Operating System :: MacOS",
         "Topic :: Internet",
     ],
     license="MIT",
-    packages=["anwdlclient", "anwdlclient.core", "anwdlclient.tools"],
-    install_requires=["cryptography", "cerberus", "pyyaml"],
+    packages=[
+        "anwdlclient",  # Includes every CLI modules at the root of 'anwdlclient'
+        "anwdlclient.core",
+        "anwdlclient.tools",
+        "anwdlclient.web",
+    ],
+    install_requires=["cryptography", "cerberus", "pyyaml", "requests"],
     include_package_data=True,
     entry_points={
         "console_scripts": [

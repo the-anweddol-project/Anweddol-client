@@ -1,4 +1,5 @@
 # Client usage
+
 ---
 
 ```{warning}
@@ -6,6 +7,12 @@ You need to follows the [Installation](installation) section before continuing t
 ```
 
 Here is a typical tutorial on how to interact with a server.
+
+```{tip}
+For each commands below, you can add the `--web` flag to interact with Anweddol servers HTTP REST API, if available.
+
+If you want to use SSL, you should see the last section of this document about self-signed certificates.
+```
 
 ## Send a STAT request to a server
 
@@ -60,3 +67,21 @@ The specified entry will be deleted if the request is successful.
 ```{note}
 You can also shutdown the container domain from inside via SSH, the server will automatically destroy the container once detected as shutdown.
 ```
+
+## Using server REST API with self-signed certificate
+
+Interactions with Anweddol servers HTTP REST API are possible with any kind of HTTP client, but note that if SSL is available on the server-side, there is a chance that the SSL certificate used by the server to encrypt communications is self-signed : It means that most modern HTTP clients will refuse the connection.
+
+To avoid this, you should tell you HTTP client to ignore the error :
+
+- With `curl` : Add the `--insecure` flag to the command.
+
+  `$ curl https://<ip>:<port>/<verb> --insecure`
+
+- With `wget` : Add the `--no-check-certificate` flag to the command.
+
+  `$ wget https://<ip>:<port>/<verb> --no-check-certificate`
+
+- With browsers : 
+
+  Refer to the corresponding usage guide to ignore certificate errors.

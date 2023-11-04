@@ -15,7 +15,7 @@ There is 2 affiliated members :
 
 - *The container UUID*
 
-  The [UUID of the container](virtualization.md#management) that the client wants to destroy.
+  The UUID of the container that the client wants to destroy.
 
 - *The client token*
 

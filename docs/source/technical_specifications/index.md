@@ -43,3 +43,15 @@ includehidden:
 ---
 
 tools/credentials
+```
+
+## Web features
+
+```{toctree}
+---
+maxdepth: 2
+includehidden:
+---
+
+web/rest_api
+```

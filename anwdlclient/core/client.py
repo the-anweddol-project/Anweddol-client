@@ -1,11 +1,15 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Client functionnality
+This module is the main Anweddol client process.
+In connects every other core modules into a single one
+so that they can all be used in a single module.
 
 """
+
+from typing import Union
 import socket
 import json
 
@@ -18,7 +22,6 @@ from .utilities import isSocketClosed
 DEFAULT_SERVER_LISTEN_PORT = 6150
 DEFAULT_CLIENT_TIMEOUT = None
 
-DEFAULT_AUTO_CONNECT = True
 DEFAULT_RECEIVE_FIRST = False
 
 
@@ -41,18 +44,19 @@ RESPONSE_MSG_INTERNAL_ERROR = "Internal error"
 class ClientInterface:
     def __init__(
         self,
-        server_ip: str = None,
+        server_ip: str,
         server_listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
+        timeout: Union[None, int] = DEFAULT_CLIENT_TIMEOUT,
         rsa_wrapper: RSAWrapper = None,
         aes_wrapper: AESWrapper = None,
-        connect: bool = DEFAULT_AUTO_CONNECT,
     ):
-        self.socket = None
         self.rsa_wrapper = rsa_wrapper if rsa_wrapper else RSAWrapper()
         self.aes_wrapper = aes_wrapper if aes_wrapper else AESWrapper()
+        self.socket = None
 
-        if connect and server_ip:
-            self.connectServer(server_ip, server_listen_port)
+        self.server_ip = server_ip
+        self.server_listen_port = server_listen_port
+        self.timeout = timeout
 
     def __del__(self):
         if not self.isClosed():
@@ -88,19 +92,16 @@ class ClientInterface:
 
     def connectServer(
         self,
-        server_ip: str,
-        server_listen_port: int = DEFAULT_SERVER_LISTEN_PORT,
-        timeout: int = DEFAULT_CLIENT_TIMEOUT,
         receive_first: bool = DEFAULT_RECEIVE_FIRST,
     ) -> None:
         if not self.isClosed():
             raise RuntimeError("Connection is already active")
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((server_ip, server_listen_port))
+        self.socket.connect((self.server_ip, self.server_listen_port))
 
-        if timeout:
-            self.socket.settimeout(timeout)
+        if self.timeout:
+            self.socket.settimeout(self.timeout)
 
         if receive_first:
             self.recvPublicRSAKey()
@@ -207,7 +208,7 @@ class ClientInterface:
 
         self.socket.sendall(encrypted_packet)
 
-    def recvResponse(self) -> dict:
+    def recvResponse(self) -> tuple:
         if self.isClosed():
             raise RuntimeError("Client must be connected to the server")
 

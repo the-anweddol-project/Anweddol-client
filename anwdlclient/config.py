@@ -1,11 +1,13 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    CLI : Configuration file management features
+This module provides the 'anwdlclient' CLI executable with configuration 
+file management features.
 
 """
+
 import cerberus
 import yaml
 
