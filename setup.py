@@ -1,9 +1,9 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Client installation script
+Client installation script
 
 """
 

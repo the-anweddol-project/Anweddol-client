@@ -16,7 +16,7 @@ Constant name                  | Value   | Definition
 
 ### Definition
 
-```{class}  anwdlclient.tools.access-token.AccessTokenManager(access_token_db_path)
+```{class} anwdlclient.tools.access_token.AccessTokenManager(access_token_db_path)
 ```
 
 Provides access token storage and management functionnality.

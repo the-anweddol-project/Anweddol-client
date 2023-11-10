@@ -308,6 +308,11 @@ please report it by opening an issue on the repository :
                 enable_ssl=args.ssl if args.ssl else DEFAULT_ENABLE_SSL,
             )
 
+            self._log_stdout(
+                "Sending request, waiting for response. This can take some time ... ",
+                bypass=args.json,
+            )
+
             (
                 is_response_valid,
                 response_content,
@@ -407,7 +412,13 @@ please report it by opening an issue on the repository :
                     _,
                 ) = session_credentials_manager.addEntry(
                     args.ip,
-                    args.port if args.port else DEFAULT_SERVER_LISTEN_PORT,
+                    args.port
+                    if args.port
+                    else (
+                        DEFAULT_SERVER_LISTEN_PORT
+                        if not args.web
+                        else DEFAULT_HTTP_SERVER_LISTEN_PORT
+                    ),
                     container_uuid,
                     client_token,
                 )
@@ -425,7 +436,13 @@ please report it by opening an issue on the repository :
                     _,
                 ) = container_credentials_manager.addEntry(
                     args.ip,
-                    args.port if args.port else DEFAULT_SERVER_LISTEN_PORT,
+                    args.port
+                    if args.port
+                    else (
+                        DEFAULT_SERVER_LISTEN_PORT
+                        if not args.web
+                        else DEFAULT_HTTP_SERVER_LISTEN_PORT
+                    ),
                     container_username,
                     container_password,
                     container_listen_port,

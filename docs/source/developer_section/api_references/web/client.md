@@ -112,5 +112,5 @@ Send an HTTP request to the server.
 > ```
 
 ```{note}
-Unlike the `core` client, this method automatically receives the server response in its process.
+Unlike the `core` client version under the same name, this method automatically handles the server response in its process.
 ```
