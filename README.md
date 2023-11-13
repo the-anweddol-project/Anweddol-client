@@ -27,7 +27,7 @@ $ cd Anweddol-client
 
 Install it with pip :
 
-**Linux-based OS** : 
+**Linux** : 
 ```
 $ pip install .
 ```
