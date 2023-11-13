@@ -20,6 +20,7 @@ from ..core.sanitization import makeRequest, verifyResponseContent
 
 # Default values
 DEFAULT_HTTP_SERVER_LISTEN_PORT = 8080
+DEFAULT_HTTPS_SERVER_LISTEN_PORT = 4443
 DEFAULT_ENABLE_SSL = False
 
 

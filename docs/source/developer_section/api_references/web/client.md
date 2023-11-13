@@ -10,7 +10,8 @@ In the module `anwdlclient.web.client` :
 
 Constant name                       | Value   | Definition
 ----------------------------------- | ------- | ----------
-*DEFAULT_HTTP_SERVER_LISTEN_PORT*   | 8080    | The default web server listen port.
+*DEFAULT_HTTP_SERVER_LISTEN_PORT*   | 8080    | The default HTTP web server listen port.
+*DEFAULT_HTTPS_SERVER_LISTEN_PORT*  | 4443    | The default HTTPS web server listen port.
 *DEFAULT_ENABLE_SSL*                | `False` | Enable SSL support by default or not.
 
 ## class *RESTWebServerInterface*
@@ -35,7 +36,7 @@ The request / response scheme stays the same, except that they are exprimed in t
 > ```{attribute} server_listen_port
 > Type : int
 > 
-> The remote server listen port. Default is `6150`.
+> The remote server listen port. Default is `8080`.
 > ```
 
 > ```{attribute} enable_ssl
@@ -43,6 +44,10 @@ The request / response scheme stays the same, except that they are exprimed in t
 > 
 > `True` to enable SSL support, `False` otherwise. Default is `False`.
 > ```
+
+```{warning}
+If the parameter `enable_ssl` is set to `True`, you will probably need to change the remote server listen port. By convention the HTTPS port used by servers is the port `4443`, but any another one can be used : Make sure that the specified coordinates are correct.
+```
 
 ### Request and reponse
 
