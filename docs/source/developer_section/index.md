@@ -7,20 +7,22 @@ Hello and welcome to the Anweddol client developer documentation.
 Here, you'll find every informations and documentation about the [python](https://www.python.org/) client API features.
 
 ```{note}
-At the root of `anwdlclient`, there is the CLI source code : They are not meant to be used on an external program since it's the client implementation's code itself.
+At the root of `anwdlclient`, there is the CLI source code : They are not meant to be used on an external program.
 ```
 
 ## Examples
 
 See basic client stubs that can be used as examples.
 
+### `core` examples
+
 ```{toctree}
 ---
 maxdepth: 3
 includehidden:
 ---
 
-examples/basic_client
+examples/core/basic_client
 ```
 
 ```{toctree}
@@ -29,7 +31,27 @@ maxdepth: 3
 includehidden:
 ---
 
-examples/custom_verb_usage
+examples/core/custom_verb_usage
+```
+
+### `web` examples
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+examples/web/basic_web_client
+```
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+examples/web/basic_web_client_ssl
 ```
 
 ## API references
@@ -90,7 +112,7 @@ maxdepth: 3
 includehidden:
 ---
 
-api_references/tools/accesstk
+api_references/tools/access_token
 ```
 
 ```{toctree}
@@ -100,6 +122,21 @@ includehidden:
 ---
 
 api_references/tools/credentials
+```
+
+### Web features
+
+The `web` features are additional functionnalities permitting HTTP interaction with Anweddol servers with the HTTP REST API available.
+
+These are not essential features, although they can be used in specific contexts :
+
+```{toctree}
+---
+maxdepth: 3
+includehidden:
+---
+
+api_references/web/client
 ```
 
 ## CLI references

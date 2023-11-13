@@ -2,7 +2,7 @@
 
 ---
 
-## Request and response formatting
+## Request and response format
 
 ### Verify a response content
 
@@ -21,33 +21,35 @@ Check if a response dictionary is a valid normalized [Response format](../../../
 
 **Return value** :
 
-> A tuple representing the verification results : 
-
+> Type : tuple
+>
+> A tuple representing the verification results :
+> 
 > ```
 > (
-> 	True, 
-> 	sanitized_response_dictionary
+> 	is_response_format_valid,
+> 	sanitized_response_dictionary,
+>   errors_dictionary,
 > )
 > ```
-
-> if the `response_dict` is a valid normalized [Response format](../../../technical_specifications/core/communication.md), 
-
-> ```
-> (
-> 	False, 
-> 	errors_dictionary
-> )
-> ```
-
-> otherwise.
-
-> - *sanitized_response_dictionary* (Type : dict)
 > 
->   The sanitized response as a normalized [Response format](../../../technical_specifications/core/communication.md) dictionary.
+> - *is_response_format_valid*
+>
+>	Type : bool
 > 
-> - *errors_dictionary* (Type : dict)
+>   `True` if the response dictionary format is valid, `False` otherwise.
+>
+> - *sanitized_response_dictionary*
+>
+>	Type : dict | `NoneType`
 > 
->   A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+>   The sanitized response as a normalized [Response format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
+> 
+> - *errors_dictionary*
+>
+>	Type : dict | `NoneType`
+> 
+>   A dictionary depicting the errors detected in `response_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_response_format_valid` is set to `True`.
 
 ```{warning} 
 The method `verifyResponseContent` does not use strict verification. It only checks if the required keys and values exist and are correct, but it is open to unknown keys or structures for the developer to be able to implement its own mechanisms (See the technical specifications [Sanitization section](../../../technical_specifications/core/communication.md) to learn more).
@@ -76,33 +78,35 @@ Make a normalized [Request format](../../../technical_specifications/core/commun
 
 **Return value** : 
 
-> A tuple representing a valid [Request format](../../../technical_specifications/core/communication.md) dictionary : 
+> Type : tuple
+>
+> A tuple representing the verification results :
 
 > ```
 > (
-> 	True, 
-> 	request_dictionary
+> 	is_request_format_valid,
+> 	sanitized_request_dictionary,
+>   errors_dictionary,
 > )
 > ```
 
-> if the operation succeeded, 
-
-> ```
-> (
-> 	False,
-> 	errors_dictionary
-> )
-> ```
-
-> otherwise.
-
-> - *request_dictionary* (Type : dict)
+> - *is_request_format_valid*
+>
+>	Type : bool
 > 
->   The request dictionary as a normalized [Response format](../../../technical_specifications/core/communication.md).
+>   `True` if the request dictionary format is valid, `False` otherwise.
+>
+> - *sanitized_request_dictionary*
+>
+>	Type : dict | `NoneType`
 > 
-> - *errors_dictionary* (Type : dict)
+>   The sanitized request as a normalized [Request format](../../../technical_specifications/core/communication.md) dictionary. `None` if `is_request_format_valid` is set to `False`.
 > 
->   A dictionary depicting the errors detected in parameters according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format.
+> - *errors_dictionary*
+>
+>	Type : dict | `NoneType`
+> 
+>   A dictionary depicting the errors detected in `request_dict` according to the [Cerberus](https://docs.python-cerberus.org/en/stable/errors.html) error format. `None` if `is_request_format_valid` is set to `True`.
 
 ```{note} 
 The `sendRequest` method from `ClientInterface` wraps this function in its process. 

@@ -1,11 +1,12 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    CLI : Main anwdlclient CLI
+This module contains the 'anwdlclient' executable CLI process.
 
 """
+
 from datetime import datetime
 from getpass import getpass
 import argparse
@@ -23,6 +24,11 @@ from .core.client import (
     REQUEST_VERB_CREATE,
     REQUEST_VERB_DESTROY,
     REQUEST_VERB_STAT,
+)
+from .web.client import (
+    WebClientInterface,
+    DEFAULT_HTTP_SERVER_LISTEN_PORT,
+    DEFAULT_ENABLE_SSL,
 )
 from .tools.credentials import SessionCredentialsManager, ContainerCredentialsManager
 from .tools.access_token import AccessTokenManager
@@ -44,6 +50,9 @@ CONFIG_FILE_PATH = (
 LOG_JSON_STATUS_SUCCESS = "OK"
 LOG_JSON_STATUS_ERROR = "ERROR"
 
+ERROR_INVALID_IP = -1
+ERROR_INVALID_PORT = -2
+
 
 class MainAnweddolClientCLI:
     def __init__(self):
@@ -51,30 +60,40 @@ class MainAnweddolClientCLI:
 
         try:
             if not os.path.exists(CONFIG_FILE_PATH):
-                print(
-                    f"\nx> The configuration file {CONFIG_FILE_PATH} was not found on system\n",
-                    file=sys.stderr,
+                self._log_stdout(
+                    f"The configuration file {CONFIG_FILE_PATH} was not found on system",
+                    error=True,
+                    color=Colors.RED,
                 )
+
                 exit(-1)
 
             self.config_manager = ConfigurationFileManager(CONFIG_FILE_PATH)
-            self.config_content = self.config_manager.loadContent()
+            (
+                is_config_content_valid,
+                config_validation_content,
+            ) = self.config_manager.loadContent()
 
-            if not self.config_content[0]:
-                print(
-                    "Error in configuration file :\n",
-                    file=sys.stderr,
+            if not is_config_content_valid:
+                self._log_stdout(
+                    "Error in configuration file :", error=True, color=Colors.RED
                 )
-                print(json.dumps(self.config_content[1], indent=4), file=sys.stderr)
+                self._log_stdout(
+                    json.dumps(config_validation_content, indent=4), error=True
+                )
+
                 exit(-1)
 
-            self.config_content = self.config_content[1]
+            self.config_content = config_validation_content
 
         except Exception as E:
-            print(
-                f"\nx> An error occured during configuration file processing : {E}\n",
-                file=sys.stderr,
+            self._log_stdout(
+                "An error occured during configuration file processing :",
+                error=True,
+                color=Colors.RED,
             )
+            self._log_stdout(str(E), error=True)
+
             exit(-1)
 
         parser = argparse.ArgumentParser(
@@ -106,7 +125,7 @@ please report it by opening an issue on the repository :
 
         if not hasattr(self, args.command.replace("-", "_")):
             parser.print_help()
-            exit(0)
+            exit(-1)
 
         try:
             exit(getattr(self, args.command.replace("-", "_"))())
@@ -116,19 +135,17 @@ please report it by opening an issue on the repository :
                 exit(0)
 
             if self.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_ERROR, "An error occured", result={"error": str(E)}
                 )
 
             else:
-                self.__log_stdout("An error occured", color=Colors.RED)
-                self.__log_stdout(f"  Error : {E}")
-
-                raise E
+                self._log_stdout("An error occured", color=Colors.RED, error=True)
+                self._log_stdout(f"  Error : {E}", error=True)
 
             exit(-1)
 
-    def __load_rsa_keys(self):
+    def _load_rsa_keys(self):
         self.runtime_rsa_wrapper = None
 
         if not self.config_content.get("enable_onetime_rsa_keys"):
@@ -169,21 +186,40 @@ please report it by opening an issue on the repository :
                     with open(public_rsa_key_file_path, "r") as fd:
                         self.runtime_rsa_wrapper.setPublicKey(fd.read().encode())
 
-    def __log_stdout(self, message, bypass=False, color=None, end="\n"):
-        if not bypass:
-            print(f"{color}{message}\033[0;0m" if color else message, end=end)
+    def _log_stdout(self, message, bypass=False, color=None, end="\n", error=False):
+        if bypass:
+            return
 
-    def __log_json(self, status, message, result={}):
+        print(
+            f"{color}{message}\033[0;0m" if color else message,
+            end=end,
+            file=sys.stderr if error else sys.stdout,
+        )
+
+    def _log_json(self, status, message, result={}):
         print(json.dumps({"status": status, "message": message, "result": result}))
+
+    def _check_parameters_validity(self, ip=None, port=None):
+        if ip and not isValidIP(ip):
+            return ERROR_INVALID_IP
+
+        if port and (port >= 65535 or port <= 0):
+            return ERROR_INVALID_PORT
 
     def create(self):
         parser = argparse.ArgumentParser(
             description="| Create a container on a remote server",
-            usage=f"""{sys.argv[0]} create <ip> [OPT]""",
+            usage=f"""{sys.argv[0]} create <IP> [OPT]""",
         )
         parser.add_argument("ip", help="specify the server IP", type=str)
         parser.add_argument(
             "-p", "--port", help="specify the server listen port", type=int
+        )
+        parser.add_argument(
+            "--web", help="use the web version of the client", action="store_true"
+        )
+        parser.add_argument(
+            "--ssl", help="enable SSL for HTTP requests", action="store_true"
         )
         parser.add_argument(
             "--show-credentials",
@@ -201,197 +237,235 @@ please report it by opening an issue on the repository :
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
-        self.__load_rsa_keys()
+        self._load_rsa_keys()
 
-        if not isValidIP(args.ip):
+        check_result = self._check_parameters_validity(args.ip, args.port)
+        if check_result == ERROR_INVALID_IP:
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_ERROR,
-                    f"'{args.ip}' is not a valid IPv4 ip format",
+                    f"'{args.ip}' is not a valid IPv4 IP format",
                 )
 
             else:
-                self.__log_stdout(
-                    f"'{args.ip}' is not a valid IPv4 ip format", color=Colors.RED
+                self._log_stdout(
+                    f"'{args.ip}' is not a valid IPv4 IP format",
+                    color=Colors.RED,
+                    error=True,
                 )
 
-            return 0
+            return -1
 
-        if args.port and (args.port >= 65535 or args.port <= 0):
+        if check_result == ERROR_INVALID_PORT:
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_ERROR,
                     f"'{args.port}' is not a non-zero integer less than 65535",
                 )
 
             else:
-                self.__log_stdout(
+                self._log_stdout(
                     f"'{args.port}' is not a non-zero integer less than 65535",
                     color=Colors.RED,
+                    error=True,
                 )
 
-            return 0
+            return -1
 
-        if not os.path.exists(self.config_content.get("access_token_db_file_path")):
-            createFileRecursively(self.config_content.get("access_token_db_file_path"))
+        access_token_db_file_path = self.config_content.get("access_token_db_file_path")
+        session_credentials_db_file_path = self.config_content.get(
+            "session_credentials_db_file_path"
+        )
+        container_credentials_db_file_path = self.config_content.get(
+            "container_credentials_db_file_path"
+        )
 
-        if not os.path.exists(
-            self.config_content.get("session_credentials_db_file_path")
-        ):
-            createFileRecursively(
-                self.config_content.get("session_credentials_db_file_path")
+        if not os.path.exists(access_token_db_file_path):
+            createFileRecursively(access_token_db_file_path)
+
+        if not os.path.exists(session_credentials_db_file_path):
+            createFileRecursively(session_credentials_db_file_path)
+
+        if not os.path.exists(container_credentials_db_file_path):
+            createFileRecursively(container_credentials_db_file_path)
+
+        request_parameters = {}
+
+        with AccessTokenManager(access_token_db_file_path) as access_token_manager:
+            entry_id = access_token_manager.getEntryID(args.ip)
+
+            if entry_id:
+                request_parameters.update(
+                    {"access_token": access_token_manager.getEntry(entry_id)[4]}
+                )
+
+        if args.web:
+            web_client = WebClientInterface(
+                args.ip,
+                server_listen_port=args.port
+                if args.port
+                else DEFAULT_HTTP_SERVER_LISTEN_PORT,
+                enable_ssl=args.ssl if args.ssl else DEFAULT_ENABLE_SSL,
             )
 
-        if not os.path.exists(
-            self.config_content.get("container_credentials_db_file_path")
-        ):
-            createFileRecursively(
-                self.config_content.get("container_credentials_db_file_path")
+            self._log_stdout(
+                "Sending request, waiting for response. This can take some time ... ",
+                bypass=args.json,
             )
-
-        with ClientInterface(rsa_wrapper=self.runtime_rsa_wrapper) as client:
-            client.connectServer(
-                args.ip, args.port if args.port else DEFAULT_SERVER_LISTEN_PORT
-            )
-
-            request_parameters = {}
-
-            with AccessTokenManager(
-                self.config_content.get("access_token_db_file_path")
-            ) as access_token_manager:
-                entry_id = access_token_manager.getEntryID(args.ip)
-
-                if entry_id:
-                    request_parameters.update(
-                        {"access_token": access_token_manager.getEntry(entry_id)[4]}
-                    )
-
-            client.sendRequest(REQUEST_VERB_CREATE, parameters=request_parameters)
 
             (
                 is_response_valid,
                 response_content,
                 response_error_dict,
-            ) = client.recvResponse()
-
-            client.closeConnection()
-
-            if not is_response_valid:
-                if args.json:
-                    self.__log_json(
-                        LOG_JSON_STATUS_ERROR,
-                        "Received invalid response",
-                        result={"error_dict": response_error_dict},
-                    )
-
-                else:
-                    self.__log_stdout("Received invalid response", color=Colors.RED)
-                    self.__log_stdout(
-                        f"  Error(s) : {json.dumps(response_error_dict, indent=4)}"
-                    )
-
-                return -1
-
-            if not response_content["success"]:
-                if args.json:
-                    self.__log_json(
-                        LOG_JSON_STATUS_ERROR,
-                        "Failed to create container",
-                        result={"response": response_content},
-                    )
-
-                else:
-                    self.__log_stdout("Failed to create container", color=Colors.RED)
-                    self.__log_stdout(f"  Message : {response_content.get('message')}")
-
-                return -1
-
-            self.__log_stdout(
-                "Container successfully created", bypass=args.json, color=Colors.GREEN
-            )
-            self.__log_stdout(
-                f"  Message : {response_content.get('message')}",
-                bypass=args.json,
-            )
-            self.__log_stdout(
-                f"  Container ISO checksum : {response_content['data'].get('container_iso_sha256')}",
-                bypass=args.json,
+            ) = web_client.sendRequest(
+                REQUEST_VERB_CREATE, parameters=request_parameters
             )
 
-            if args.show_credentials:
-                self.__log_stdout("Session credentials :", bypass=args.json)
-                self.__log_stdout(
-                    f"  Container UUID : {response_content['data'].get('container_uuid')}",
-                    bypass=args.json,
-                )
-                self.__log_stdout(
-                    f"  Client token : {response_content['data'].get('client_token')}",
-                    bypass=args.json,
-                )
-                self.__log_stdout(
-                    f"  Container username : {response_content['data'].get('container_username')}",
-                    bypass=args.json,
-                )
-                self.__log_stdout(
-                    f"  Container password : {response_content['data'].get('container_password')}",
-                    bypass=args.json,
-                )
-                self.__log_stdout(
-                    f"  Container listen port : {response_content['data'].get('container_listen_port')}",
+        else:
+            with ClientInterface(
+                args.ip,
+                server_listen_port=args.port
+                if args.port
+                else DEFAULT_SERVER_LISTEN_PORT,
+                rsa_wrapper=self.runtime_rsa_wrapper,
+            ) as client:
+                client.connectServer()
+                client.sendRequest(REQUEST_VERB_CREATE, parameters=request_parameters)
+
+                self._log_stdout(
+                    "Request sent, waiting for response. This can take some time ... ",
                     bypass=args.json,
                 )
 
-            if not args.do_not_store:
-                with SessionCredentialsManager(
-                    self.config_content.get("session_credentials_db_file_path")
-                ) as session_credentials_manager:
-                    (
-                        new_session_credentials_entry_id,
-                        _,
-                    ) = session_credentials_manager.addEntry(
-                        args.ip,
-                        args.port if args.port else DEFAULT_SERVER_LISTEN_PORT,
-                        response_content["data"].get("container_uuid"),
-                        response_content["data"].get("client_token"),
-                    )
+                (
+                    is_response_valid,
+                    response_content,
+                    response_error_dict,
+                ) = client.recvResponse()
 
-                    self.__log_stdout(
-                        f"  Session credentials ID : {new_session_credentials_entry_id}",
-                        bypass=args.json,
-                    )
-
-                with ContainerCredentialsManager(
-                    self.config_content.get("container_credentials_db_file_path")
-                ) as container_credentials_manager:
-                    (
-                        new_container_credentials_entry_id,
-                        _,
-                    ) = container_credentials_manager.addEntry(
-                        args.ip,
-                        args.port if args.port else DEFAULT_SERVER_LISTEN_PORT,
-                        response_content["data"].get("container_username"),
-                        response_content["data"].get("container_password"),
-                        response_content["data"].get("container_listen_port"),
-                    )
-
-                    self.__log_stdout(
-                        f"  Container credentials ID : {new_container_credentials_entry_id}",
-                        bypass=args.json,
-                    )
-
+        if not is_response_valid:
             if args.json:
-                self.__log_json(
-                    LOG_JSON_STATUS_SUCCESS,
-                    "Container successfully created",
-                    result={
-                        "message": response_content["message"],
-                        "data": response_content["data"],
-                        "session_entry_id": new_session_credentials_entry_id,
-                        "container_entry_id": new_container_credentials_entry_id,
-                    },
+                self._log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    "Received invalid response",
+                    result={"error_dict": response_error_dict},
                 )
 
-            return 0
+            else:
+                self._log_stdout(
+                    "Received invalid response", color=Colors.RED, error=True
+                )
+                self._log_stdout(
+                    f"  Error(s) : {json.dumps(response_error_dict, indent=4)}",
+                    error=True,
+                )
+
+            return -1
+
+        message = response_content.get("message")
+
+        if not response_content["success"]:
+            if args.json:
+                self._log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    "Failed to create container",
+                    result={"response": response_content},
+                )
+
+            else:
+                self._log_stdout(
+                    "Failed to create container", color=Colors.RED, error=True
+                )
+                self._log_stdout(f"  Message : {message}", error=True)
+
+            return -1
+
+        container_iso_sha256 = response_content["data"].get("container_iso_sha256")
+        container_uuid = response_content["data"].get("container_uuid")
+        client_token = response_content["data"].get("client_token")
+        container_username = response_content["data"].get("container_username")
+        container_password = response_content["data"].get("container_password")
+        container_listen_port = response_content["data"].get("container_listen_port")
+
+        self._log_stdout(
+            "Container successfully created", bypass=args.json, color=Colors.GREEN
+        )
+        self._log_stdout(f"  Message : {message}", bypass=args.json)
+        self._log_stdout(
+            f"  Container ISO checksum : {container_iso_sha256}", bypass=args.json
+        )
+
+        if args.show_credentials and not args.json:
+            self._log_stdout("Session credentials :")
+            self._log_stdout(f"  Container UUID : {container_uuid}")
+            self._log_stdout(f"  Client token : {client_token}")
+            self._log_stdout(f"  Container username : {container_username}")
+            self._log_stdout(f"  Container password : {container_password}")
+            self._log_stdout(f"  Container listen port : {container_listen_port}")
+
+        if not args.do_not_store:
+            with SessionCredentialsManager(
+                session_credentials_db_file_path
+            ) as session_credentials_manager:
+                (
+                    new_session_credentials_entry_id,
+                    _,
+                ) = session_credentials_manager.addEntry(
+                    args.ip,
+                    args.port
+                    if args.port
+                    else (
+                        DEFAULT_SERVER_LISTEN_PORT
+                        if not args.web
+                        else DEFAULT_HTTP_SERVER_LISTEN_PORT
+                    ),
+                    container_uuid,
+                    client_token,
+                )
+
+                self._log_stdout(
+                    f"  Session credentials ID : {new_session_credentials_entry_id}",
+                    bypass=args.json,
+                )
+
+            with ContainerCredentialsManager(
+                container_credentials_db_file_path
+            ) as container_credentials_manager:
+                (
+                    new_container_credentials_entry_id,
+                    _,
+                ) = container_credentials_manager.addEntry(
+                    args.ip,
+                    args.port
+                    if args.port
+                    else (
+                        DEFAULT_SERVER_LISTEN_PORT
+                        if not args.web
+                        else DEFAULT_HTTP_SERVER_LISTEN_PORT
+                    ),
+                    container_username,
+                    container_password,
+                    container_listen_port,
+                )
+
+                self._log_stdout(
+                    f"  Container credentials ID : {new_container_credentials_entry_id}",
+                    bypass=args.json,
+                )
+
+        if args.json:
+            self._log_json(
+                LOG_JSON_STATUS_SUCCESS,
+                "Container successfully created",
+                result={
+                    "message": message,
+                    "data": response_content.get("data"),
+                    "session_entry_id": new_session_credentials_entry_id,
+                    "container_entry_id": new_container_credentials_entry_id,
+                },
+            )
+
+        return 0
 
     def destroy(self):
         parser = argparse.ArgumentParser(
@@ -400,6 +474,12 @@ please report it by opening an issue on the repository :
         )
         parser.add_argument(
             "session_entry_id", help="specify the local session ID", type=int
+        )
+        parser.add_argument(
+            "--web", help="use the web version of the client", action="store_true"
+        )
+        parser.add_argument(
+            "--ssl", help="enable SSL for HTTP requests", action="store_true"
         )
         parser.add_argument(
             "--do-not-delete",
@@ -412,45 +492,45 @@ please report it by opening an issue on the repository :
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
-        self.__load_rsa_keys()
+        self._load_rsa_keys()
 
-        if not os.path.exists(self.config_content.get("access_token_db_file_path")):
-            createFileRecursively(self.config_content.get("access_token_db_file_path"))
-
-        if not os.path.exists(
-            self.config_content.get("session_credentials_db_file_path")
-        ):
-            createFileRecursively(
-                self.config_content.get("session_credentials_db_file_path")
-            )
-
-        if not os.path.exists(
-            self.config_content.get("container_credentials_db_file_path")
-        ):
-            createFileRecursively(
-                self.config_content.get("container_credentials_db_file_path")
-            )
-
-        session_credentials_manager = SessionCredentialsManager(
-            self.config_content.get("session_credentials_db_file_path")
+        access_token_db_file_path = self.config_content.get("access_token_db_file_path")
+        session_credentials_db_file_path = self.config_content.get(
+            "session_credentials_db_file_path"
+        )
+        container_credentials_db_file_path = self.config_content.get(
+            "container_credentials_db_file_path"
         )
 
+        if not os.path.exists(access_token_db_file_path):
+            createFileRecursively(access_token_db_file_path)
+
+        if not os.path.exists(session_credentials_db_file_path):
+            createFileRecursively(session_credentials_db_file_path)
+
+        if not os.path.exists(container_credentials_db_file_path):
+            createFileRecursively(container_credentials_db_file_path)
+
+        session_credentials_manager = SessionCredentialsManager(
+            session_credentials_db_file_path
+        )
         entry_content = session_credentials_manager.getEntry(args.session_entry_id)
 
         if not entry_content:
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_ERROR,
                     f"Session ID '{args.session_entry_id}' does not exists",
                 )
 
             else:
-                self.__log_stdout(
+                self._log_stdout(
                     f"Session ID '{args.session_entry_id}' does not exists",
                     color=Colors.RED,
+                    error=True,
                 )
 
-            return 0
+            return -1
 
         (
             entry_id,
@@ -461,105 +541,124 @@ please report it by opening an issue on the repository :
             client_token,
         ) = entry_content
 
-        with ClientInterface(rsa_wrapper=self.runtime_rsa_wrapper) as client:
-            try:
-                client.connectServer(server_ip, server_port)
+        request_parameters = {
+            "container_uuid": container_uuid,
+            "client_token": client_token,
+        }
 
-                request_parameters = {
-                    "container_uuid": container_uuid,
-                    "client_token": client_token,
-                }
+        with AccessTokenManager(access_token_db_file_path) as access_token_manager:
+            entry_id = access_token_manager.getEntryID(server_ip)
 
-                with AccessTokenManager(
-                    self.config_content.get("access_token_db_file_path")
-                ) as access_token_manager:
-                    entry_id = access_token_manager.getEntryID(server_ip)
+            if entry_id:
+                request_parameters.update(
+                    {"access_token": access_token_manager.getEntry(entry_id)[4]}
+                )
 
-                    if entry_id:
-                        request_parameters.update(
-                            {"access_token": access_token_manager.getEntry(entry_id)[4]}
-                        )
-
-                client.sendRequest(REQUEST_VERB_DESTROY, parameters=request_parameters)
+        try:
+            if args.web:
+                client = WebClientInterface(
+                    server_ip,
+                    server_listen_port=server_port,
+                    enable_ssl=args.ssl if args.ssl else DEFAULT_ENABLE_SSL,
+                )
 
                 (
                     is_response_valid,
                     response_content,
                     response_error_dict,
-                ) = client.recvResponse()
+                ) = client.sendRequest(
+                    REQUEST_VERB_DESTROY, parameters=request_parameters
+                )
 
-                client.closeConnection()  # From here the connection is useless
+            else:
+                with ClientInterface(
+                    server_ip,
+                    server_listen_port=server_port,
+                    rsa_wrapper=self.runtime_rsa_wrapper,
+                ) as client:
+                    client.connectServer()
+                    client.sendRequest(
+                        REQUEST_VERB_DESTROY, parameters=request_parameters
+                    )
 
-                if not is_response_valid:
-                    if args.json:
-                        self.__log_json(
-                            LOG_JSON_STATUS_ERROR,
-                            "Received invalid response",
-                            result={"error_dict": response_error_dict},
-                        )
+                    (
+                        is_response_valid,
+                        response_content,
+                        response_error_dict,
+                    ) = client.recvResponse()
 
-                    else:
-                        self.__log_stdout("Received invalid response", color=Colors.RED)
-                        self.__log_stdout(
-                            f"  Error(s) : {json.dumps(response_error_dict, indent=4)}"
-                        )
-
-                    session_credentials_manager.closeDatabase()
-                    return -1
-
-                if not response_content["success"]:
-                    if args.json:
-                        self.__log_json(
-                            LOG_JSON_STATUS_ERROR,
-                            "Failed to destroy container",
-                            result={"response": response_content},
-                        )
-
-                    else:
-                        self.__log_stdout(
-                            "Failed to destroy container", color=Colors.RED
-                        )
-                        self.__log_stdout(
-                            f"  Message : {response_content.get('message')}"
-                        )
-
-                    session_credentials_manager.closeDatabase()
-                    return -1
-
-                if not args.do_not_delete:
-                    session_credentials_manager.deleteEntry(args.session_entry_id)
-
-                    with ContainerCredentialsManager(
-                        self.config_content.get("container_credentials_db_file_path")
-                    ) as container_credentials_manager:
-                        container_entry_id = container_credentials_manager.getEntryID(
-                            server_ip
-                        )
-
-                        if container_entry_id:
-                            container_credentials_manager.deleteEntry(
-                                container_entry_id
-                            )
-
+            if not is_response_valid:
                 if args.json:
-                    self.__log_json(
-                        LOG_JSON_STATUS_SUCCESS,
-                        "Container successfully destroyed",
-                        result={"message": response_content["message"]},
+                    self._log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Received invalid response",
+                        result={"error_dict": response_error_dict},
                     )
 
                 else:
-                    self.__log_stdout(
-                        "Container successfully destroyed", color=Colors.GREEN
+                    self._log_stdout(
+                        "Received invalid response", color=Colors.RED, error=True
                     )
-                    self.__log_stdout(f"  Message : {response_content.get('message')}")
+                    self._log_stdout(
+                        f"  Error(s) : {json.dumps(response_error_dict, indent=4)}",
+                        error=True,
+                    )
 
                 session_credentials_manager.closeDatabase()
-                return 0
 
-            except Exception as E:
+                return -1
+
+            message = response_content.get("message")
+
+            if not response_content["success"]:
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_ERROR,
+                        "Failed to destroy container",
+                        result={"response": response_content},
+                    )
+
+                else:
+                    self._log_stdout(
+                        "Failed to destroy container", color=Colors.RED, error=True
+                    )
+                    self._log_stdout(f"  Message : {message}", error=True)
+
                 session_credentials_manager.closeDatabase()
-                raise E
+
+                return -1
+
+            if not args.do_not_delete:
+                session_credentials_manager.deleteEntry(args.session_entry_id)
+
+                with ContainerCredentialsManager(
+                    container_credentials_db_file_path
+                ) as container_credentials_manager:
+                    container_entry_id = container_credentials_manager.getEntryID(
+                        server_ip
+                    )
+
+                    if container_entry_id:
+                        container_credentials_manager.deleteEntry(container_entry_id)
+
+            if args.json:
+                self._log_json(
+                    LOG_JSON_STATUS_SUCCESS,
+                    "Container successfully destroyed",
+                    result={"message": message},
+                )
+
+            else:
+                self._log_stdout("Container successfully destroyed", color=Colors.GREEN)
+                self._log_stdout(f"  Message : {message}")
+
+            session_credentials_manager.closeDatabase()
+
+            return 0
+
+        except Exception as E:
+            session_credentials_manager.closeDatabase()
+            raise E
 
     def stat(self):
         parser = argparse.ArgumentParser(
@@ -573,126 +672,155 @@ please report it by opening an issue on the repository :
             "-p", "--port", help="specify the server listen port", type=int
         )
         parser.add_argument(
+            "--web", help="use the web version of the client", action="store_true"
+        )
+        parser.add_argument(
+            "--ssl", help="enable SSL for HTTP requests", action="store_true"
+        )
+        parser.add_argument(
             "--json", help="print output in JSON format", action="store_true"
         )
         args = parser.parse_args(sys.argv[2:])
 
         self.json = args.json
 
-        if not isValidIP(args.ip):
+        check_result = self._check_parameters_validity(args.ip, args.port)
+        if check_result == ERROR_INVALID_IP:
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_ERROR,
-                    f"'{args.ip}' is not a valid IPv4 ip format",
+                    f"'{args.ip}' is not a valid IPv4 IP format",
                 )
 
             else:
-                self.__log_stdout(
-                    f"'{args.ip}' is not a valid IPv4 ip format", color=Colors.RED
+                self._log_stdout(
+                    f"'{args.ip}' is not a valid IPv4 IP format",
+                    color=Colors.RED,
+                    error=True,
                 )
 
-            return 0
+            return -1
 
-        if args.port and (args.port >= 65535 or args.port <= 0):
+        if check_result == ERROR_INVALID_PORT:
             if args.json:
-                self.__log_json(
+                self._log_json(
                     LOG_JSON_STATUS_ERROR,
                     f"'{args.port}' is not a non-zero integer less than 65535",
                 )
 
             else:
-                self.__log_stdout(
+                self._log_stdout(
                     f"'{args.port}' is not a non-zero integer less than 65535",
                     color=Colors.RED,
+                    error=True,
                 )
 
-            return 0
+            return -1
 
-        self.__load_rsa_keys()
+        self._load_rsa_keys()
+        access_token_db_file_path = self.config_content.get("access_token_db_file_path")
 
-        if not os.path.exists(self.config_content.get("access_token_db_file_path")):
-            createFileRecursively(self.config_content.get("access_token_db_file_path"))
+        if not os.path.exists(access_token_db_file_path):
+            createFileRecursively(access_token_db_file_path)
 
-        with ClientInterface(rsa_wrapper=self.runtime_rsa_wrapper) as client:
-            client.connectServer(
-                args.ip, args.port if args.port else DEFAULT_SERVER_LISTEN_PORT
+        request_parameters = {}
+
+        with AccessTokenManager(access_token_db_file_path) as access_token_manager:
+            entry_id = access_token_manager.getEntryID(args.ip)
+
+            if entry_id:
+                request_parameters.update(
+                    {"access_token": access_token_manager.getEntry(entry_id)[4]}
+                )
+
+        if args.web:
+            client = WebClientInterface(
+                args.ip,
+                server_listen_port=args.port
+                if args.port
+                else DEFAULT_HTTP_SERVER_LISTEN_PORT,
+                enable_ssl=args.ssl if args.ssl else DEFAULT_ENABLE_SSL,
             )
-
-            request_parameters = {}
-
-            with AccessTokenManager(
-                self.config_content.get("access_token_db_file_path")
-            ) as access_token_manager:
-                entry_id = access_token_manager.getEntryID(args.ip)
-
-                if entry_id:
-                    request_parameters.update(
-                        {"access_token": access_token_manager.getEntry(entry_id)[4]}
-                    )
-
-            client.sendRequest(REQUEST_VERB_STAT, parameters=request_parameters)
 
             (
                 is_response_valid,
                 response_content,
                 response_error_dict,
-            ) = client.recvResponse()
+            ) = client.sendRequest(REQUEST_VERB_STAT, parameters=request_parameters)
 
-            client.closeConnection()  # From here the connection is useless
+        else:
+            with ClientInterface(
+                args.ip,
+                server_listen_port=args.port
+                if args.port
+                else DEFAULT_SERVER_LISTEN_PORT,
+                rsa_wrapper=self.runtime_rsa_wrapper,
+            ) as client:
+                client.connectServer()
+                client.sendRequest(REQUEST_VERB_STAT, parameters=request_parameters)
 
-            if not is_response_valid:
-                if args.json:
-                    self.__log_json(
-                        LOG_JSON_STATUS_ERROR,
-                        "Received invalid response",
-                        result={"error_dict": response_error_dict},
-                    )
+                (
+                    is_response_valid,
+                    response_content,
+                    response_error_dict,
+                ) = client.recvResponse()
 
-                else:
-                    self.__log_stdout("Received invalid response", color=Colors.RED)
-                    self.__log_stdout(
-                        f"  Error(s) : {json.dumps(response_error_dict, indent=4)}"
-                    )
-
-                return -1
-
-            if not response_content["success"]:
-                if args.json:
-                    self.__log_json(
-                        LOG_JSON_STATUS_ERROR,
-                        "Failed to stat server",
-                        result={"response": response_content},
-                    )
-
-                else:
-                    self.__log_stdout("Failed to stat server", color=Colors.RED)
-                    self.__log_stdout(f"  Message : {response_content.get('message')}")
-
-                return -1
-
+        if not is_response_valid:
             if args.json:
-                self.__log_json(
-                    LOG_JSON_STATUS_SUCCESS,
-                    "Server statistics",
-                    result={
-                        "message": response_content.get("message"),
-                        "data": response_content.get("data"),
-                    },
+                self._log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    "Received invalid response",
+                    result={"error_dict": response_error_dict},
                 )
 
             else:
-                self.__log_stdout("Server statistics :")
-                self.__log_stdout(
-                    f"  Version : {response_content['data'].get('version')}"
+                self._log_stdout(
+                    "Received invalid response", color=Colors.RED, error=True
                 )
-                self.__log_stdout(
-                    f"  Uptime : {response_content['data'].get('uptime')}"
-                )
-                self.__log_stdout(
-                    f"  Available containers : {response_content['data'].get('available')}"
+                self._log_stdout(
+                    f"  Error(s) : {json.dumps(response_error_dict, indent=4)}",
+                    error=True,
                 )
 
-            return 0
+            return -1
+
+        message = response_content.get("message")
+
+        if not response_content["success"]:
+            if args.json:
+                self._log_json(
+                    LOG_JSON_STATUS_ERROR,
+                    "Failed to stat server",
+                    result={"response": response_content},
+                )
+
+            else:
+                self._log_stdout("Failed to stat server", color=Colors.RED, error=True)
+                self._log_stdout(f"  Message : {message}", error=True)
+
+            return -1
+
+        version = response_content["data"].get("version")
+        uptime = response_content["data"].get("uptime")
+        available = response_content["data"].get("available")
+
+        if args.json:
+            self._log_json(
+                LOG_JSON_STATUS_SUCCESS,
+                "Server statistics",
+                result={
+                    "message": message,
+                    "data": response_content.get("data"),
+                },
+            )
+
+        else:
+            self._log_stdout("Server statistics :")
+            self._log_stdout(f"  Version : {version}")
+            self._log_stdout(f"  Uptime : {uptime}")
+            self._log_stdout(f"  Available containers : {available}")
+
+        return 0
 
     def session(self):
         parser = argparse.ArgumentParser(
@@ -723,21 +851,19 @@ please report it by opening an issue on the repository :
 
         self.json = args.json
 
-        if not os.path.exists(
-            self.config_content.get("session_credentials_db_file_path")
-        ):
-            createFileRecursively(
-                self.config_content.get("session_credentials_db_file_path")
-            )
-
-        session_credentials_manager = SessionCredentialsManager(
-            self.config_content.get("session_credentials_db_file_path")
+        session_credentials_db_file_path = self.config_content.get(
+            "session_credentials_db_file_path"
         )
 
-        try:
+        if not os.path.exists(session_credentials_db_file_path):
+            createFileRecursively(session_credentials_db_file_path)
+
+        with SessionCredentialsManager(
+            session_credentials_db_file_path
+        ) as session_credentials_manager:
             if args.l:
                 if args.json:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Recorded entries ID",
                         result={
@@ -751,85 +877,83 @@ please report it by opening an issue on the repository :
                         creation_timestamp,
                         server_ip,
                     ) in session_credentials_manager.listEntries():
-                        self.__log_stdout(f"== Entry ID {entry_id} ==")
-                        self.__log_stdout(
+                        self._log_stdout(f"- Entry ID {entry_id}")
+                        self._log_stdout(
                             f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
                         )
-                        self.__log_stdout(f"  Server IP : {server_ip}\n")
+                        self._log_stdout(f"  Server IP : {server_ip}\n")
 
             elif args.get_entry:
                 credentials = session_credentials_manager.getEntry(args.get_entry)
 
                 if not credentials:
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID '{args.get_entry}' does not exists",
                         )
 
                     else:
-                        self.__log_stdout(
+                        self._log_stdout(
                             f"Entry ID '{args.get_entry}' does not exists",
                             color=Colors.RED,
+                            error=True,
                         )
+
+                    return -1
+
+                (
+                    _,
+                    creation_timestamp,
+                    server_ip,
+                    server_port,
+                    container_uuid,
+                    client_token,
+                ) = credentials
+
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_SUCCESS,
+                        "Entry ID content",
+                        result={
+                            "created": creation_timestamp,
+                            "server_ip": server_ip,
+                            "server_port": server_port,
+                            "container_uuid": container_uuid,
+                            "client_token": client_token,
+                        },
+                    )
 
                 else:
-                    (
-                        _,
-                        creation_timestamp,
-                        server_ip,
-                        server_port,
-                        container_uuid,
-                        client_token,
-                    ) = credentials
-
-                    if args.json:
-                        self.__log_json(
-                            LOG_JSON_STATUS_SUCCESS,
-                            "Entry ID content",
-                            result={
-                                "created": creation_timestamp,
-                                "server_ip": server_ip,
-                                "server_port": server_port,
-                                "container_uuid": container_uuid,
-                                "client_token": client_token,
-                            },
-                        )
-
-                    else:
-                        self.__log_stdout(f"Entry ID {args.get_entry} content :")
-                        self.__log_stdout(
-                            f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
-                        )
-                        self.__log_stdout(f"  Server IP : {server_ip}")
-                        self.__log_stdout(f"  Server port : {server_port}")
-                        self.__log_stdout(f"  Container UUID : {container_uuid}")
-                        self.__log_stdout(f"  Client token : {client_token}")
+                    self._log_stdout(f"Entry ID {args.get_entry} content :")
+                    self._log_stdout(
+                        f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
+                    )
+                    self._log_stdout(f"  Server IP : {server_ip}")
+                    self._log_stdout(f"  Server port : {server_port}")
+                    self._log_stdout(f"  Container UUID : {container_uuid}")
+                    self._log_stdout(f"  Client token : {client_token}")
 
             else:
-                if args.delete_entry:
-                    if not session_credentials_manager.getEntry(args.delete_entry):
-                        if args.json:
-                            self.__log_json(
-                                LOG_JSON_STATUS_ERROR,
-                                f"Entry ID '{args.delete_entry}' does not exists",
-                            )
-
-                        else:
-                            self.__log_stdout(
-                                f"Entry ID '{args.delete_entry}' does not exists",
-                                color=Colors.RED,
-                            )
+                if not session_credentials_manager.getEntry(args.delete_entry):
+                    if args.json:
+                        self._log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"Entry ID '{args.delete_entry}' does not exists",
+                        )
 
                     else:
-                        session_credentials_manager.deleteEntry(args.delete_entry)
+                        self._log_stdout(
+                            f"Entry ID '{args.delete_entry}' does not exists",
+                            color=Colors.RED,
+                            error=True,
+                        )
 
-            session_credentials_manager.closeDatabase()
+                    return -1
+
+                session_credentials_manager.deleteEntry(args.delete_entry)
+
             return 0
-
-        except Exception as E:
-            session_credentials_manager.closeDatabase()
-            raise E
 
     def container(self):
         parser = argparse.ArgumentParser(
@@ -860,21 +984,19 @@ please report it by opening an issue on the repository :
 
         self.json = args.json
 
-        if not os.path.exists(
-            self.config_content.get("container_credentials_db_file_path")
-        ):
-            createFileRecursively(
-                self.config_content.get("container_credentials_db_file_path")
-            )
-
-        container_credentials_manager = ContainerCredentialsManager(
-            self.config_content.get("container_credentials_db_file_path")
+        container_credentials_db_file_path = self.config_content.get(
+            "container_credentials_db_file_path"
         )
 
-        try:
+        if not os.path.exists(container_credentials_db_file_path):
+            createFileRecursively(container_credentials_db_file_path)
+
+        with ContainerCredentialsManager(
+            container_credentials_db_file_path
+        ) as container_credentials_manager:
             if args.l:
                 if args.json:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Recorded entries ID",
                         result={
@@ -888,11 +1010,11 @@ please report it by opening an issue on the repository :
                         creation_timestamp,
                         server_ip,
                     ) in container_credentials_manager.listEntries():
-                        self.__log_stdout(f"== Entry ID {entry_id} ==")
-                        self.__log_stdout(
+                        self._log_stdout(f"- Entry ID {entry_id}")
+                        self._log_stdout(
                             f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
                         )
-                        self.__log_stdout(f"  Server IP : {server_ip}\n")
+                        self._log_stdout(f"  Server IP : {server_ip}\n")
 
             elif args.get_entry:
                 credentials = container_credentials_manager.getEntry(args.get_entry)
@@ -900,16 +1022,19 @@ please report it by opening an issue on the repository :
                 if not credentials:
                     container_credentials_manager.closeDatabase()
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID '{args.get_entry}' does not exists",
                         )
 
                     else:
-                        self.__log_stdout(
+                        self._log_stdout(
                             f"Entry ID '{args.get_entry}' does not exists",
                             color=Colors.RED,
+                            error=True,
                         )
+
+                    return -1
 
                 (
                     _,
@@ -922,7 +1047,7 @@ please report it by opening an issue on the repository :
                 ) = credentials
 
                 if args.json:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Entry ID content",
                         result={
@@ -936,40 +1061,37 @@ please report it by opening an issue on the repository :
                     )
 
                 else:
-                    self.__log_stdout(f"Entry ID {args.get_entry} content :")
-                    self.__log_stdout(
+                    self._log_stdout(f"Entry ID {args.get_entry} content :")
+                    self._log_stdout(
                         f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
                     )
-                    self.__log_stdout(f"  Server IP : {server_ip}")
-                    self.__log_stdout(f"  Server port : {server_port}")
-                    self.__log_stdout(f"  SSH username : {container_username}")
-                    self.__log_stdout(f"  SSH password : {container_password}")
-                    self.__log_stdout(f"  SSH listen port : {container_listen_port}")
+                    self._log_stdout(f"  Server IP : {server_ip}")
+                    self._log_stdout(f"  Server port : {server_port}")
+                    self._log_stdout(f"  SSH username : {container_username}")
+                    self._log_stdout(f"  SSH password : {container_password}")
+                    self._log_stdout(f"  SSH listen port : {container_listen_port}")
 
             else:
                 if args.delete_entry:
                     if not container_credentials_manager.getEntry(args.delete_entry):
                         if args.json:
-                            self.__log_json(
+                            self._log_json(
                                 LOG_JSON_STATUS_ERROR,
                                 f"Entry ID '{args.delete_entry}' does not exists",
                             )
 
                         else:
-                            self.__log_stdout(
+                            self._log_stdout(
                                 f"Entry ID '{args.delete_entry}' does not exists",
                                 color=Colors.RED,
+                                error=True,
                             )
 
-                    else:
-                        container_credentials_manager.deleteEntry(args.delete_entry)
+                        return -1
 
-            container_credentials_manager.closeDatabase()
+                    container_credentials_manager.deleteEntry(args.delete_entry)
+
             return 0
-
-        except Exception as E:
-            container_credentials_manager.closeDatabase()
-            raise E
 
     def access_tk(self):
         parser = argparse.ArgumentParser(
@@ -1013,17 +1135,15 @@ please report it by opening an issue on the repository :
 
         self.json = args.json
 
-        if not os.path.exists(self.config_content.get("access_token_db_file_path")):
-            createFileRecursively(self.config_content.get("access_token_db_file_path"))
+        access_token_db_file_path = self.config_content.get("access_token_db_file_path")
 
-        access_token_manager = AccessTokenManager(
-            self.config_content.get("access_token_db_file_path")
-        )
+        if not os.path.exists(access_token_db_file_path):
+            createFileRecursively(access_token_db_file_path)
 
-        try:
+        with AccessTokenManager(access_token_db_file_path) as access_token_manager:
             if args.l:
                 if args.json:
-                    self.__log_json(
+                    self._log_json(
                         LOG_JSON_STATUS_SUCCESS,
                         "Recorded entries ID",
                         result={"entry_list": access_token_manager.listEntries()},
@@ -1035,136 +1155,138 @@ please report it by opening an issue on the repository :
                         creation_timestamp,
                         server_ip,
                     ) in access_token_manager.listEntries():
-                        self.__log_stdout(f"== Entry ID {entry_id} ==")
-                        self.__log_stdout(
+                        self._log_stdout(f"- Entry ID {entry_id}")
+                        self._log_stdout(
                             f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
                         )
-                        self.__log_stdout(f"  Server IP : {server_ip}\n")
+                        self._log_stdout(f"  Server IP : {server_ip}\n")
 
             elif args.server_ip:
-                if not isValidIP(args.server_ip):
+                check_result = self._check_parameters_validity(args.server_ip)
+                if check_result == ERROR_INVALID_IP:
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
-                            f"'{args.server_ip}' is not a valid IPv4 ip format",
+                            f"'{args.server_ip}' is not a valid IPv4 IP format",
                         )
 
                     else:
-                        self.__log_stdout(
-                            f"'{args.server_ip}' is not a valid IPv4 ip format",
+                        self._log_stdout(
+                            f"'{args.server_ip}' is not a valid IPv4 IP format",
                             color=Colors.RED,
+                            error=True,
                         )
+
+                    return -1
+
+                if access_token_manager.getEntryID(args.server_ip):
+                    if args.json:
+                        self._log_json(
+                            LOG_JSON_STATUS_ERROR,
+                            f"'{args.server_ip}' is already specified on database",
+                        )
+
+                    else:
+                        self._log_stdout(
+                            f"'{args.server_ip}' is already specified on database",
+                            color=Colors.RED,
+                            error=True,
+                        )
+
+                    return -1
+
+                new_access_token = (
+                    getpass(prompt="Paste the new token : ")
+                    if not args.json
+                    else input("")
+                )
+                new_entry_id, _ = access_token_manager.addEntry(
+                    args.server_ip,
+                    args.server_port
+                    if args.server_port
+                    else DEFAULT_SERVER_LISTEN_PORT,
+                    new_access_token,
+                )
+
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_SUCCESS,
+                        "New token entry created",
+                        result={"entry_id": new_entry_id},
+                    )
 
                 else:
-                    if access_token_manager.getEntryID(args.server_ip):
-                        if args.json:
-                            self.__log_json(
-                                LOG_JSON_STATUS_ERROR,
-                                f"'{args.server_ip}' is already specified on database",
-                            )
-
-                        else:
-                            self.__log_stdout(
-                                f"'{args.server_ip}' is already specified on database",
-                                color=Colors.RED,
-                            )
-
-                    else:
-                        new_access_token = (
-                            getpass(prompt="Paste the new token : ")
-                            if not args.json
-                            else input("")
-                        )
-                        new_entry_tuple = access_token_manager.addEntry(
-                            args.server_ip,
-                            args.server_port
-                            if args.server_port
-                            else DEFAULT_SERVER_LISTEN_PORT,
-                            new_access_token,
-                        )
-
-                        if args.json:
-                            self.__log_json(
-                                LOG_JSON_STATUS_SUCCESS,
-                                "New token entry created",
-                                result={"entry_id": new_entry_tuple[0]},
-                            )
-
-                        else:
-                            self.__log_stdout(
-                                "New token entry created", color=Colors.GREEN
-                            )
-                            self.__log_stdout(f"  Entry ID : {new_entry_tuple[0]}")
+                    self._log_stdout("New token entry created", color=Colors.GREEN)
+                    self._log_stdout(f"  Entry ID : {new_entry_id}")
 
             elif args.print_entry:
                 entry_content = access_token_manager.getEntry(args.print_entry)
 
                 if not entry_content:
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID '{args.print_entry}' does not exists",
                         )
 
                     else:
-                        self.__log_stdout(
+                        self._log_stdout(
                             f"Entry ID '{args.print_entry}' does not exists",
                             color=Colors.RED,
+                            error=True,
                         )
+
+                    return -1
+
+                (
+                    _,
+                    creation_timestamp,
+                    server_ip,
+                    server_port,
+                    access_token,
+                ) = entry_content
+
+                if args.json:
+                    self._log_json(
+                        LOG_JSON_STATUS_SUCCESS,
+                        "Entry ID content",
+                        result={
+                            "created": creation_timestamp,
+                            "server_ip": server_ip,
+                            "server_port": server_port,
+                            "access_token": access_token,
+                        },
+                    )
 
                 else:
-                    (
-                        _,
-                        creation_timestamp,
-                        server_ip,
-                        server_port,
-                        access_token,
-                    ) = entry_content
-
-                    if args.json:
-                        self.__log_json(
-                            LOG_JSON_STATUS_SUCCESS,
-                            "Entry ID content",
-                            result={
-                                "created": creation_timestamp,
-                                "server_ip": server_ip,
-                                "server_port": server_port,
-                                "access_token": access_token,
-                            },
-                        )
-
-                    else:
-                        self.__log_stdout(f"Entry ID {args.print_entry} content :")
-                        self.__log_stdout(
-                            f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
-                        )
-                        self.__log_stdout(f"  Server IP : {server_ip}")
-                        self.__log_stdout(f"  Server port : {server_port}")
-                        self.__log_stdout(f"  Access token : {access_token}")
+                    self._log_stdout(f"Entry ID {args.print_entry} content :")
+                    self._log_stdout(
+                        f"  Created : {datetime.fromtimestamp(creation_timestamp)}"
+                    )
+                    self._log_stdout(f"  Server IP : {server_ip}")
+                    self._log_stdout(f"  Server port : {server_port}")
+                    self._log_stdout(f"  Access token : {access_token}")
 
             else:
                 if not access_token_manager.getEntry(args.delete_entry):
                     if args.json:
-                        self.__log_json(
+                        self._log_json(
                             LOG_JSON_STATUS_ERROR,
                             f"Entry ID '{args.delete_entry}' does not exists",
                         )
 
                     else:
-                        self.__log_stdout(
+                        self._log_stdout(
                             f"Entry ID '{args.delete_entry}' does not exists",
                             color=Colors.RED,
+                            error=True,
                         )
 
-                else:
-                    access_token_manager.deleteEntry(args.delete_entry)
+                    return -1
 
-            access_token_manager.closeDatabase()
-            return 0
+                access_token_manager.deleteEntry(args.delete_entry)
 
-        except Exception as E:
-            access_token_manager.closeDatabase()
-            raise E
+        return 0
 
     def regen_rsa(self):
         parser = argparse.ArgumentParser(
@@ -1197,14 +1319,14 @@ please report it by opening an issue on the repository :
         fingerprint = hashlib.sha256(new_rsa_wrapper.getPublicKey()).hexdigest()
 
         if args.json:
-            self.__log_json(
+            self._log_json(
                 LOG_JSON_STATUS_SUCCESS,
                 "RSA keys re-generated",
                 result={"fingerprint": fingerprint},
             )
 
         else:
-            self.__log_stdout("RSA keys re-generated", color=Colors.GREEN)
-            self.__log_stdout(f"  Fingerprint : {fingerprint}")
+            self._log_stdout("RSA keys re-generated", color=Colors.GREEN)
+            self._log_stdout(f"  Fingerprint : {fingerprint}")
 
         return 0

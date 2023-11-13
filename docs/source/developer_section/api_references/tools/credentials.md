@@ -2,25 +2,36 @@
 
 ----
 
+## Constants
+
+In the module `anwdlclient.tools.credentials` : 
+
+### Default values
+
+Constant name                  | Value   | Definition
+------------------------------ | ------- | ----------
+*DEFAULT_COMMIT*               | `False` | Commit the potential modifications brought by the custom SQL query by default or not.
+
 ## class *SessionCredentialsManager*
 
 ### Definition
 
-```{class} anwdlclient.tools.credentials.SessionCredentialsManager(session_credentials_db_path: str)
+```{class} anwdlclient.tools.credentials.SessionCredentialsManager(session_credentials_db_path)
 ```
 
 Provides session credentials storage and management functionality.
 
-```{tip}
-This class can be used in a 'with' statement.
-```
 **Parameters** : 
 
 > ```{attribute} session_credentials_db_path
-> > Type : str
+> Type : str
 > 
 > The session credentials database file path.
 > ```
+
+```{tip}
+This class can be used in a 'with' statement.
+```
 
 ### General usage
 
@@ -35,7 +46,9 @@ Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#
 
 **Return value** :
 
-> The `sqlite3.Connection` object of the instance.
+> Type : [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection)
+>
+> The [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection) object of the instance.
 
 ---
 
@@ -50,7 +63,9 @@ Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqli
 
 **Return value** : 
 
-> The `sqlite3.Cursor` object of the instance.
+> Type : [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor)
+>
+> The [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor) object of the instance.
 
 ---
 
@@ -81,13 +96,15 @@ Get the entry ID of a specific IP.
 **Parameters** : 
 
 > ```{attribute} server_ip
-> > Type : str
+> Type : str
 > 
 > The server IP to search for.
 > ```
 
 **Return value** : 
 
+> Type : int
+>
 > The entry ID of the specified IP if exists, `None` otherwise. 
 
 ---
@@ -100,13 +117,15 @@ Get entry credentials.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to get the credentials from.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the full entry row : 
 
 > ```
@@ -120,27 +139,39 @@ Get entry credentials.
 > )
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 >   
 >   The entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 >   
 >   The entry creation timestamp.
 > 
-> - *server_ip* (Type : str)
+> - *server_ip*
+>
+>	Type : str
 >   
 >   The affiliated server IP.
 > 
-> - *server_port* (Type : int)
+> - *server_port*
+>
+>	Type : int
 >   
 >   The affiliated server port.
 > 
-> - *container_uuid* (Type : str)
+> - *container_uuid*
+>
+>	Type : str
 >   
 >   The container UUID.
 > 
-> - *client_token* (Type : str)
+> - *client_token*
+>
+>	Type : str
 >   
 >   The client token.
 
@@ -154,31 +185,33 @@ Add an entry.
 **Parameters** : 
 
 > ```{attribute} server_ip
-> > Type : str
+> Type : str
 > 
 > The server IP.
 > ```
 
 > ```{attribute} server_port
-> > Type : int
+> Type : int
 > 
 > The server listen port.
 > ```
 
 > ```{attribute} container_uuid
-> > Type : str
+> Type : str
 > 
 > The container UUID.
 > ```
 
 > ```{attribute} client_token
-> > Type : str
+> Type : str
 > 
 > The client token.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the infomations of the created entry :
 
 > ```
@@ -189,15 +222,56 @@ Add an entry.
 > ```
 
 > - *entry_id*
-> 
+>
+>	Type : int 
+>
 >   The new entry ID.
 > 
 > - *creation_timestamp*
+>
+>   Type : int
 > 
 >   The entry ID creation timestamp.
 
 ```{warning}
 Since the `container_uuid` and the `client_token` values are meant to be read and reused later, they are stored in plain text on the database.
+```
+
+---
+
+```{classmethod} executeQuery(text_query, parameters, commit)
+```
+
+Execute a custom SQL query on the database instance.
+
+**Parameters** :
+
+> ```{attribute} text_query
+> Type : str
+> 
+> The custom SQL query to execute.
+> ```
+
+> ```{attribute} parameters
+> Type : tuple
+> 
+> A tuple representing the qmarks [placeholder parameters](https://docs.python.org/3/library/sqlite3.html#sqlite3-placeholders) values to use with the query. Default is an empty tuple.
+> ```
+
+> ```{attribute} commit
+> Type : bool
+> 
+> `True` to commit the potential modifications brought by the custom SQL query, `False` to ignore. Default is `False`.
+> ```
+
+**Return value** : 
+
+> Type : [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor)
+>
+> The [`sqlite3.Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor) object representing the SQL query result.
+
+```{tip}
+Refer to the [technical specifications](../../../technical_specifications/tools/credentials.md) to learn about table and columns name.
 ```
 
 ---
@@ -213,25 +287,36 @@ List entries.
 
 **Return value** : 
 
+> Type : list
+>
 > A list of tuples representing every session credentials entries on the database : 
 
 > ```
-> (
-> 	entry_id,
-> 	creation_timestamp,
-> 	server_ip
-> )
+> [
+> 	(
+> 		entry_id,
+> 		creation_timestamp,
+> 		server_ip
+> 	),
+> 	...
+> ]
 > ```
 
-> - *entry_id* (Type : int)
+> - *entry_id*
+>
+>	Type : int
 > 
 >   The new entry ID.
 > 
-> - *creation_timestamp* (Type : int)
+> - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry ID creation timestamp.
 >
-> - *server_ip* (Type : str)
+> - *server_ip*
+>
+>	Type : str
 >   
 >   The affiliated server IP.
 
@@ -249,7 +334,7 @@ Delete an entry.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to delete on the database.
 > ```
@@ -257,6 +342,7 @@ Delete an entry.
 **Return value** : 
 
 > `None`.
+
 
 ## class *ContainerCredentialsManager*
 
@@ -270,7 +356,7 @@ Provides container credentials storage and management functionality.
 **Parameters** : 
 
 > ```{attribute} container_credentials_db_path
-> > Type : str
+> Type : str
 > 
 > The container credentials database file path.
 > ```
@@ -288,7 +374,9 @@ Get the [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#
 
 **Return value** : 
 
-> The `sqlite3.Connection` object of the instance.
+> Type : [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection)
+>
+> The [`sqlite3.Connection`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Connection) object of the instance.
 
 ---
 
@@ -303,7 +391,9 @@ Get the [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqli
 
 **Return value** : 
 
-> The `sqlite3.Cursor` object of the instance.
+> Type : [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor)
+>
+> The [`sqlite3.Cursor`](https://docs.python.org/3.8/library/sqlite3.html#sqlite3.Cursor) object of the instance.
 
 ---
 
@@ -334,13 +424,15 @@ Get the entry ID of a specific IP.
 **Parameters** : 
 
 > ```{attribute} server_ip
-> > Type : str
+> Type : str
 > 
 > The server IP to search for.
 > ```
 
 **Return value** : 
 
+> Type : int | `NoneType`
+>
 > The entry ID of the specified IP if exists, `None` otherwise. 
 
 ---
@@ -353,13 +445,15 @@ Get entry credentials.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to get the credentials from.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the full entry row : 
 
 > ```
@@ -375,31 +469,45 @@ Get entry credentials.
 > ```
 
 > - *entry_id*
-> 
+>
+>   Type : int 
+>
 >   The entry ID.
 > 
 > - *creation_timestamp*
-> 
+>
+>   Type : int 
+>
 >   The entry creation timestamp.
 > 
 > - *server_ip*
+>
+>	Type : str
 > 
 >   The affiliated server IP.
 > 
 > - *server_port*
-> 
+>
+>   Type : int 
+>
 >   The affiliated server port.
 > 
 > - *container_username*
+>
+>	Type : str
 > 
 >   The container SSH username.
 > 
 > - *container_password*
+>
+>	Type : str
 > 
 >   The container SSH password.
 > 
 > - *container_listen_port*
-> 
+>
+>   Type : int 
+>
 >   The container SSH listen port.
 
 ---
@@ -412,37 +520,39 @@ Add an entry.
 **Parameters** : 
 
 > ```{attribute} server_ip
-> > Type : str
+> Type : str
 > 
 > The server IP.
 > ```
 
 > ```{attribute} server_port
-> > Type : int
+> Type : int
 > 
 > The server listen port.
 > ```
 
 > ```{attribute} container_username
-> > Type : str
+> Type : str
 > 
 > The container SSH username.
 > ```
 
 > ```{attribute} container_password
-> > Type : str
+> Type : str
 > 
 > The container SSH password.
 > ```
 
 > ```{attribute} container_listen_port
-> > Type : int
+> Type : int
 > 
 > The container SSH listen port.
 > ```
 
 **Return value** : 
 
+> Type : tuple
+>
 > A tuple representing the infomations of the created entry :
 
 > ```
@@ -453,15 +563,56 @@ Add an entry.
 > ```
 
 > - *entry_id*
+>
+>	Type : int
 > 
 >   The new entry ID.
 > 
 > - *creation_timestamp*
+>
+>	Type : int
 > 
 >   The entry ID creation timestamp.
 
 ```{warning}
 Since the `container_username`, `container_password` and the `container_listen_port` values are meant to be read and reused later, they are stored in plain text on the database.
+```
+
+---
+
+```{classmethod} executeQuery(text_query, parameters, commit)
+```
+
+Execute a custom SQL query on the database instance.
+
+**Parameters** :
+
+> ```{attribute} text_query
+> Type : str
+> 
+> The custom SQL query to execute.
+> ```
+
+> ```{attribute} parameters
+> Type : tuple
+> 
+> A tuple representing the qmarks [placeholder parameters](https://docs.python.org/3/library/sqlite3.html#sqlite3-placeholders) values to use with the query. Default is an empty tuple.
+> ```
+
+> ```{attribute} commit
+> Type : bool
+> 
+> `True` to commit the potential modifications brought by the custom SQL query, `False` to ignore. Default is `False`.
+> ```
+
+**Return value** : 
+
+> Type : [`sqlite3.Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor)
+>
+> The [`sqlite3.Cursor`](https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor) object representing the SQL query result.
+
+```{tip}
+Refer to the [technical specifications](../../../technical_specifications/tools/credentials.md) to learn about table and columns name.
 ```
 
 ---
@@ -477,26 +628,37 @@ List entries.
 
 **Return value** : 
 
+> Type : list
+>
 > A list of tuples representing every container credentials entries on the database : 
 
 > ```
-> (
-> 	entry_id,
-> 	creation_timestamp,
-> 	server_ip
-> )
+> [
+> 	(
+> 		entry_id,
+> 		creation_timestamp,
+> 		server_ip
+> 	),
+> 	...
+> ]
 > ```
 
 > - *entry_id*
 > 
+>	Type : int
+>
 >   The entry ID.
 > 
 > - *creation_timestamp*
 > 
+>	Type : int
+>
 >   The entry creation timestamp.
 > 
 > - *server_ip*
 > 
+>	Type : str
+>
 >   The affiliated server IP.
 
 ```{note}
@@ -513,7 +675,7 @@ Delete an entry.
 **Parameters** : 
 
 > ```{attribute} entry_id
-> > Type : int
+> Type : int
 > 
 > The entry ID to delete on the database.
 > ```

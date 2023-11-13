@@ -1,13 +1,19 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Credentials management features
+This module provides additional features for session and
+container credentials storage and management.
 
 """
+
+from typing import Union
 import sqlite3
 import time
+
+# Default parameters
+DEFAULT_COMMIT = False
 
 
 # Since the two kinds of credentials are separated, there is one class for one database
@@ -49,9 +55,9 @@ class SessionCredentialsManager:
     def getCursor(self) -> sqlite3.Cursor:
         return self.database_cursor
 
-    def getEntryID(self, server_ip: str) -> None | int:
+    def getEntryID(self, server_ip: str) -> Union[None, int]:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolClientSessionCredentialsTable WHERE ServerIP=?",
+            "SELECT EntryID FROM AnweddolClientSessionCredentialsTable WHERE ServerIP=?",
             (server_ip,),
         )
         query_result = query_cursor.fetchone()
@@ -60,7 +66,7 @@ class SessionCredentialsManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolClientSessionCredentialsTable WHERE EntryID=?",
+            "SELECT * FROM AnweddolClientSessionCredentialsTable WHERE EntryID=?",
             (entry_id,),
         )
 
@@ -71,57 +77,58 @@ class SessionCredentialsManager:
     ) -> tuple:
         new_entry_creation_timestamp = int(time.time())
 
-        try:
-            self.database_cursor.execute(
-                """INSERT INTO AnweddolClientSessionCredentialsTable (
-                    CreationTimestamp, 
-                    ServerIP, 
-                    ServerPort, 
-                    ContainerUUID, 
-                    ClientToken) VALUES (?, ?, ?, ?, ?)""",
-                (
-                    new_entry_creation_timestamp,
-                    server_ip,
-                    server_port,
-                    container_uuid,
-                    client_token,
-                ),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            """INSERT INTO AnweddolClientSessionCredentialsTable (
+                CreationTimestamp, 
+                ServerIP, 
+                ServerPort, 
+                ContainerUUID, 
+                ClientToken) VALUES (?, ?, ?, ?, ?)""",
+            (
+                new_entry_creation_timestamp,
+                server_ip,
+                server_port,
+                container_uuid,
+                client_token,
+            ),
+        )
+        self.database_connection.commit()
 
         return (self.database_cursor.lastrowid, new_entry_creation_timestamp)
 
+    def executeQuery(
+        self, text_query: str, parameters: tuple = (), commit: bool = DEFAULT_COMMIT
+    ) -> sqlite3.Cursor:
+        result = self.database_cursor.execute(text_query, parameters)
+
+        if commit:
+            self.database_connection.commit()
+
+        return result
+
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolClientSessionCredentialsTable",
+            "SELECT EntryID, CreationTimestamp, ServerIP FROM AnweddolClientSessionCredentialsTable",
         )
 
         return query_cursor.fetchall()
 
     def deleteEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "DELETE from AnweddolClientSessionCredentialsTable WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "DELETE FROM AnweddolClientSessionCredentialsTable WHERE EntryID=?",
+            (entry_id,),
+        )
+        self.database_connection.commit()
 
     def closeDatabase(self) -> None:
         try:
             self.database_cursor.close()
             self.database_connection.close()
-            self.is_closed = True
 
         except sqlite3.ProgrammingError:
             pass
+
+        self.is_closed = True
 
 
 class ContainerCredentialsManager:
@@ -163,9 +170,9 @@ class ContainerCredentialsManager:
     def getCursor(self) -> sqlite3.Cursor:
         return self.database_cursor
 
-    def getEntryID(self, server_ip: str) -> None | int:
+    def getEntryID(self, server_ip: str) -> Union[None, int]:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolClientContainerCredentialsTable WHERE ServerIP=?",
+            "SELECT EntryID FROM AnweddolClientContainerCredentialsTable WHERE ServerIP=?",
             (server_ip,),
         )
         query_result = query_cursor.fetchone()
@@ -174,7 +181,7 @@ class ContainerCredentialsManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolClientContainerCredentialsTable WHERE EntryID=?",
+            "SELECT * FROM AnweddolClientContainerCredentialsTable WHERE EntryID=?",
             (entry_id,),
         )
 
@@ -190,56 +197,57 @@ class ContainerCredentialsManager:
     ) -> tuple:
         new_entry_creation_timestamp = int(time.time())
 
-        try:
-            self.database_cursor.execute(
-                """INSERT INTO AnweddolClientContainerCredentialsTable (
-                    CreationTimestamp, 
-                    ServerIP, 
-                    ServerPort,
-                    ContainerUsername, 
-                    ContainerPassword, 
-                    ContainerListenPort) VALUES (?, ?, ?, ?, ?, ?)""",
-                (
-                    new_entry_creation_timestamp,
-                    server_ip,
-                    server_port,
-                    container_username,
-                    container_password,
-                    container_listen_port,
-                ),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            """INSERT INTO AnweddolClientContainerCredentialsTable (
+                CreationTimestamp, 
+                ServerIP, 
+                ServerPort,
+                ContainerUsername, 
+                ContainerPassword, 
+                ContainerListenPort) VALUES (?, ?, ?, ?, ?, ?)""",
+            (
+                new_entry_creation_timestamp,
+                server_ip,
+                server_port,
+                container_username,
+                container_password,
+                container_listen_port,
+            ),
+        )
+        self.database_connection.commit()
 
         return (self.database_cursor.lastrowid, new_entry_creation_timestamp)
 
+    def executeQuery(
+        self, text_query: str, parameters: tuple = (), commit: bool = DEFAULT_COMMIT
+    ) -> sqlite3.Cursor:
+        result = self.database_cursor.execute(text_query, parameters)
+
+        if commit:
+            self.database_connection.commit()
+
+        return result
+
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolClientContainerCredentialsTable",
+            "SELECT EntryID, CreationTimestamp, ServerIP FROM AnweddolClientContainerCredentialsTable",
         )
 
         return query_cursor.fetchall()
 
     def deleteEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "DELETE from AnweddolClientContainerCredentialsTable WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "DELETE FROM AnweddolClientContainerCredentialsTable WHERE EntryID=?",
+            (entry_id,),
+        )
+        self.database_connection.commit()
 
     def closeDatabase(self) -> None:
         try:
             self.database_cursor.close()
             self.database_connection.close()
-            self.is_closed = True
 
         except sqlite3.ProgrammingError:
             pass
+
+        self.is_closed = True

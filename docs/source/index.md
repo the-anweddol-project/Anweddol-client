@@ -2,6 +2,8 @@
 
 ---
 
+Welcome to the Anweddol client documentation pages.
+
 ## Global overview
 
 Anweddol is a client/server system providing temporary, SSH-controllable virtual machines to enhance anonymity online.

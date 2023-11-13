@@ -42,6 +42,6 @@ $ anwdlclient access-tk -l
 Retrieve the ID of the entry in question, then execute : 
 
 ```
-$ anwdlclient access-tk -r <entry_id>
+$ anwdlclient access-tk -d <entry_id>
 ```
 

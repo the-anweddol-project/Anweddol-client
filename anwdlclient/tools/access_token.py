@@ -1,13 +1,19 @@
 """
-    Copyright 2023 The Anweddol project
-    See the LICENSE file for licensing informations
-    ---
+Copyright 2023 The Anweddol project
+See the LICENSE file for licensing informations
+---
 
-    Access token management features
+This module provides additional features for access token 
+storage and management.
 
 """
+
+from typing import Union
 import sqlite3
 import time
+
+# Default parameters
+DEFAULT_COMMIT = False
 
 
 class AccessTokenManager:
@@ -48,9 +54,9 @@ class AccessTokenManager:
     def getCursor(self) -> sqlite3.Cursor:
         return self.database_cursor
 
-    def getEntryID(self, server_ip: str) -> None | int:
+    def getEntryID(self, server_ip: str) -> Union[None, int]:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID from AnweddolClientAccessTokenTable WHERE ServerIP=?",
+            "SELECT EntryID FROM AnweddolClientAccessTokenTable WHERE ServerIP=?",
             (server_ip,),
         )
         query_result = query_cursor.fetchone()
@@ -59,7 +65,7 @@ class AccessTokenManager:
 
     def getEntry(self, entry_id: int) -> tuple:
         query_cursor = self.database_cursor.execute(
-            "SELECT * from AnweddolClientAccessTokenTable WHERE EntryID=?", (entry_id,)
+            "SELECT * FROM AnweddolClientAccessTokenTable WHERE EntryID=?", (entry_id,)
         )
 
         return query_cursor.fetchone()
@@ -67,50 +73,51 @@ class AccessTokenManager:
     def addEntry(self, server_ip: str, server_port: int, access_token: str) -> tuple:
         new_entry_creation_timestamp = int(time.time())
 
-        try:
-            self.database_cursor.execute(
-                """INSERT INTO AnweddolClientAccessTokenTable (
-                    CreationTimestamp, 
-                    ServerIP, 
-                    ServerPort, 
-                    AccessToken) VALUES (?, ?, ?, ?)""",
-                (new_entry_creation_timestamp, server_ip, server_port, access_token),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            """INSERT INTO AnweddolClientAccessTokenTable (
+                CreationTimestamp, 
+                ServerIP, 
+                ServerPort, 
+                AccessToken) VALUES (?, ?, ?, ?)""",
+            (new_entry_creation_timestamp, server_ip, server_port, access_token),
+        )
+        self.database_connection.commit()
 
         return (
             self.database_cursor.lastrowid,
             new_entry_creation_timestamp,
         )
 
+    def executeQuery(
+        self, text_query: str, parameters: tuple = (), commit: bool = DEFAULT_COMMIT
+    ) -> sqlite3.Cursor:
+        result = self.database_cursor.execute(text_query, parameters)
+
+        if commit:
+            self.database_connection.commit()
+
+        return result
+
     def listEntries(self) -> list:
         query_cursor = self.database_cursor.execute(
-            "SELECT EntryID, CreationTimestamp, ServerIP from AnweddolClientAccessTokenTable",
+            "SELECT EntryID, CreationTimestamp, ServerIP FROM AnweddolClientAccessTokenTable",
         )
 
         return query_cursor.fetchall()
 
     def deleteEntry(self, entry_id: int) -> None:
-        try:
-            self.database_cursor.execute(
-                "DELETE from AnweddolClientAccessTokenTable WHERE EntryID=?",
-                (entry_id,),
-            )
-            self.database_connection.commit()
-
-        except Exception as E:
-            self.database_connection.rollback()
-            raise E
+        self.database_cursor.execute(
+            "DELETE FROM AnweddolClientAccessTokenTable WHERE EntryID=?",
+            (entry_id,),
+        )
+        self.database_connection.commit()
 
     def closeDatabase(self) -> None:
         try:
             self.database_cursor.close()
             self.database_connection.close()
-            self.is_closed = True
 
         except sqlite3.ProgrammingError:
             pass
+
+        self.is_closed = True
