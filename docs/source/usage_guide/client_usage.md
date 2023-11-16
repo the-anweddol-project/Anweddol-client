@@ -6,10 +6,10 @@
 You need to follows the [Installation](installation) section before continuing this tutorial.
 ```
 
-Here is a typical tutorial on how to interact with a server.
+Here is a typical tutorial on how to interact with an Anweddol server.
 
 ```{tip}
-For each commands below, you can add the `--web` flag to interact with Anweddol servers HTTP REST API, if available.
+For each commands below, you can add the `-w` argument to interact with Anweddol servers HTTP REST API, if available.
 
 If you want to use SSL, you should see the last section of this document about self-signed certificates.
 ```
@@ -85,3 +85,5 @@ To avoid this, you should tell you HTTP client to ignore the error :
 - With browsers : 
 
   Refer to the corresponding usage guide to ignore certificate errors.
+
+If you are using the `anwdlclient` CLI, you can simply add the `--no-ssl-verification` flag to the command to ignore SSL certificate verification.

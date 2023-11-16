@@ -22,6 +22,7 @@ from ..core.sanitization import makeRequest, verifyResponseContent
 DEFAULT_HTTP_SERVER_LISTEN_PORT = 8080
 DEFAULT_HTTPS_SERVER_LISTEN_PORT = 4443
 DEFAULT_ENABLE_SSL = False
+DEFAULT_VERIFY_SSL_CERTIFICATE = True
 
 
 class WebClientInterface:
@@ -35,7 +36,12 @@ class WebClientInterface:
         self.enable_ssl = enable_ssl
         self.server_listen_port = server_listen_port
 
-    def sendRequest(self, verb: str, parameters: dict = {}) -> None:
+    def sendRequest(
+        self,
+        verb: str,
+        parameters: dict = {},
+        verify_ssl_certificate: bool = DEFAULT_VERIFY_SSL_CERTIFICATE,
+    ) -> None:
         is_request_valid, request_content, request_errors = makeRequest(
             verb, parameters=parameters
         )
@@ -47,6 +53,7 @@ class WebClientInterface:
             f"http{'s' if self.enable_ssl else ''}://{self.server_ip}:{self.server_listen_port}/{verb.lower()}",
             data=json.dumps(request_content.get("parameters")),
             headers={"Content-Type": "application/json"},
+            verify=verify_ssl_certificate,
         )
 
         if req.status_code >= 300:
