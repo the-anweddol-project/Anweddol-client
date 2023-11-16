@@ -13,6 +13,7 @@ Constant name                       | Value   | Definition
 *DEFAULT_HTTP_SERVER_LISTEN_PORT*   | 8080    | The default HTTP web server listen port.
 *DEFAULT_HTTPS_SERVER_LISTEN_PORT*  | 4443    | The default HTTPS web server listen port.
 *DEFAULT_ENABLE_SSL*                | `False` | Enable SSL support by default or not.
+*DEFAULT_VERIFY_SSL_CERTIFICATE*    | `True`  | Verify the server ssl certificate by default or not.
 
 ## class *RESTWebServerInterface*
 
@@ -51,7 +52,7 @@ If the parameter `enable_ssl` is set to `True`, you will probably need to change
 
 ### Request and reponse
 
-```{classmethod} sendRequest(verb, parameters)
+```{classmethod} sendRequest(verb, parameters, verify_ssl_certificate)
 ```
 
 Send an HTTP request to the server.
@@ -68,6 +69,12 @@ Send an HTTP request to the server.
 > Type : dict
 > 
 > The parameters dictionary to send. The content must be an empty dict or a normalized [Request format](https://anweddol-client.readthedocs.io/en/latest/technical_specifications/core/communication.html#request-format) dictionary. Default is an empty dict.
+> ```
+
+> ```{attribute} verify_ssl_certificate
+> Type : bool
+> 
+> `True` to verify the server SSL certificate, `False` otherwise. Default is `True`.
 > ```
 
 **Return value** :
@@ -118,4 +125,8 @@ Send an HTTP request to the server.
 
 ```{note}
 Unlike the `core` client version under the same name, this method automatically handles the server response in its process.
+```
+
+```{warning}
+As said in the usage guide, there is a chance that the SSL certificate used by the server to encrypt communications is self-signed : Meaning that `urllib` can raise an SSL error during the process. Use the `--no-ssl-verification` flag to ignore SSL errors if needed.
 ```

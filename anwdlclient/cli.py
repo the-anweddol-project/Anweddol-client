@@ -148,43 +148,39 @@ please report it by opening an issue on the repository :
     def _load_rsa_keys(self):
         self.runtime_rsa_wrapper = None
 
-        if not self.config_content.get("enable_onetime_rsa_keys"):
-            public_rsa_key_file_path = self.config_content.get(
-                "public_rsa_key_file_path"
-            )
-            private_rsa_key_file_path = self.config_content.get(
-                "private_rsa_key_file_path"
-            )
+        if self.config_content.get("enable_onetime_rsa_keys"):
+            return
 
-            if not os.path.exists(private_rsa_key_file_path):
-                createFileRecursively(private_rsa_key_file_path)
+        public_rsa_key_file_path = self.config_content.get("public_rsa_key_file_path")
+        private_rsa_key_file_path = self.config_content.get("private_rsa_key_file_path")
 
-                self.runtime_rsa_wrapper = RSAWrapper()
+        if not os.path.exists(private_rsa_key_file_path):
+            createFileRecursively(private_rsa_key_file_path)
 
+            self.runtime_rsa_wrapper = RSAWrapper()
+
+            with open(public_rsa_key_file_path, "w") as fd:
+                fd.write(self.runtime_rsa_wrapper.getPublicKey().decode())
+
+            with open(private_rsa_key_file_path, "w") as fd:
+                fd.write(self.runtime_rsa_wrapper.getPrivateKey().decode())
+
+        else:
+            self.runtime_rsa_wrapper = RSAWrapper(generate_key_pair=False)
+
+            with open(private_rsa_key_file_path, "r") as fd:
+                self.runtime_rsa_wrapper.setPrivateKey(
+                    fd.read().encode(),
+                    derivate_public_key=not os.path.exists(public_rsa_key_file_path),
+                )
+
+            if not os.path.exists(public_rsa_key_file_path):
                 with open(public_rsa_key_file_path, "w") as fd:
                     fd.write(self.runtime_rsa_wrapper.getPublicKey().decode())
 
-                with open(private_rsa_key_file_path, "w") as fd:
-                    fd.write(self.runtime_rsa_wrapper.getPrivateKey().decode())
-
             else:
-                self.runtime_rsa_wrapper = RSAWrapper(generate_key_pair=False)
-
-                with open(private_rsa_key_file_path, "r") as fd:
-                    self.runtime_rsa_wrapper.setPrivateKey(
-                        fd.read().encode(),
-                        derivate_public_key=not os.path.exists(
-                            public_rsa_key_file_path
-                        ),
-                    )
-
-                if not os.path.exists(public_rsa_key_file_path):
-                    with open(public_rsa_key_file_path, "w") as fd:
-                        fd.write(self.runtime_rsa_wrapper.getPublicKey().decode())
-
-                else:
-                    with open(public_rsa_key_file_path, "r") as fd:
-                        self.runtime_rsa_wrapper.setPublicKey(fd.read().encode())
+                with open(public_rsa_key_file_path, "r") as fd:
+                    self.runtime_rsa_wrapper.setPublicKey(fd.read().encode())
 
     def _log_stdout(self, message, bypass=False, color=None, end="\n", error=False):
         if bypass:
@@ -216,10 +212,18 @@ please report it by opening an issue on the repository :
             "-p", "--port", help="specify the server listen port", type=int
         )
         parser.add_argument(
-            "--web", help="use the web version of the client", action="store_true"
+            "-w", "--web", help="use the web version of the client", action="store_true"
         )
         parser.add_argument(
-            "--ssl", help="enable SSL for HTTP requests", action="store_true"
+            "-s",
+            "--ssl",
+            help="enable SSL for HTTP communications",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--no-ssl-verification",
+            help="do not verify the server SSL certificate (for self-signed ones)",
+            action="store_true",
         )
         parser.add_argument(
             "--show-credentials",
@@ -318,7 +322,9 @@ please report it by opening an issue on the repository :
                 response_content,
                 response_error_dict,
             ) = web_client.sendRequest(
-                REQUEST_VERB_CREATE, parameters=request_parameters
+                REQUEST_VERB_CREATE,
+                parameters=request_parameters,
+                verify_ssl_certificate=not args.no_ssl_verification,
             )
 
         else:
@@ -330,7 +336,10 @@ please report it by opening an issue on the repository :
                 rsa_wrapper=self.runtime_rsa_wrapper,
             ) as client:
                 client.connectServer()
-                client.sendRequest(REQUEST_VERB_CREATE, parameters=request_parameters)
+                client.sendRequest(
+                    REQUEST_VERB_CREATE,
+                    parameters=request_parameters,
+                )
 
                 self._log_stdout(
                     "Request sent, waiting for response. This can take some time ... ",
@@ -476,10 +485,18 @@ please report it by opening an issue on the repository :
             "session_entry_id", help="specify the local session ID", type=int
         )
         parser.add_argument(
-            "--web", help="use the web version of the client", action="store_true"
+            "-w", "--web", help="use the web version of the client", action="store_true"
         )
         parser.add_argument(
-            "--ssl", help="enable SSL for HTTP requests", action="store_true"
+            "-s",
+            "--ssl",
+            help="enable SSL for HTTP communications",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--no-ssl-verification",
+            help="do not verify the server SSL certificate (for self-signed ones)",
+            action="store_true",
         )
         parser.add_argument(
             "--do-not-delete",
@@ -567,7 +584,9 @@ please report it by opening an issue on the repository :
                     response_content,
                     response_error_dict,
                 ) = client.sendRequest(
-                    REQUEST_VERB_DESTROY, parameters=request_parameters
+                    REQUEST_VERB_DESTROY,
+                    parameters=request_parameters,
+                    verify_ssl_certificate=not args.no_ssl_verification,
                 )
 
             else:
@@ -578,7 +597,8 @@ please report it by opening an issue on the repository :
                 ) as client:
                     client.connectServer()
                     client.sendRequest(
-                        REQUEST_VERB_DESTROY, parameters=request_parameters
+                        REQUEST_VERB_DESTROY,
+                        parameters=request_parameters,
                     )
 
                     (
@@ -672,10 +692,18 @@ please report it by opening an issue on the repository :
             "-p", "--port", help="specify the server listen port", type=int
         )
         parser.add_argument(
-            "--web", help="use the web version of the client", action="store_true"
+            "-w", "--web", help="use the web version of the client", action="store_true"
         )
         parser.add_argument(
-            "--ssl", help="enable SSL for HTTP requests", action="store_true"
+            "-s",
+            "--ssl",
+            help="enable SSL for HTTP communications",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--no-ssl-verification",
+            help="do not verify the server SSL certificate (for self-signed ones)",
+            action="store_true",
         )
         parser.add_argument(
             "--json", help="print output in JSON format", action="store_true"
@@ -746,7 +774,11 @@ please report it by opening an issue on the repository :
                 is_response_valid,
                 response_content,
                 response_error_dict,
-            ) = client.sendRequest(REQUEST_VERB_STAT, parameters=request_parameters)
+            ) = client.sendRequest(
+                REQUEST_VERB_STAT,
+                parameters=request_parameters,
+                verify_ssl_certificate=not args.no_ssl_verification,
+            )
 
         else:
             with ClientInterface(
@@ -757,7 +789,10 @@ please report it by opening an issue on the repository :
                 rsa_wrapper=self.runtime_rsa_wrapper,
             ) as client:
                 client.connectServer()
-                client.sendRequest(REQUEST_VERB_STAT, parameters=request_parameters)
+                client.sendRequest(
+                    REQUEST_VERB_STAT,
+                    parameters=request_parameters,
+                )
 
                 (
                     is_response_valid,
