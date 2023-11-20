@@ -63,8 +63,8 @@ enable_onetime_rsa_keys: True
     f"{anweddol_base_path}credentials{local_ifs}core{local_ifs}session_credentials.db",
     f"{anweddol_base_path}credentials{local_ifs}core{local_ifs}container_credentials.db",
     f"{anweddol_base_path}credentials{local_ifs}access_token.db",
-    f"{anweddol_base_path}rsa_keys{local_ifs}public.pem",
-    f"{anweddol_base_path}rsa_keys{local_ifs}private.pem",
+    f"{anweddol_base_path}rsa{local_ifs}public.pem",
+    f"{anweddol_base_path}rsa{local_ifs}private.pem",
 )
 
 with open(anweddol_base_path + "config.yaml", "w") as fd:

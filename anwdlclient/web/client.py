@@ -41,7 +41,7 @@ class WebClientInterface:
         verb: str,
         parameters: dict = {},
         verify_ssl_certificate: bool = DEFAULT_VERIFY_SSL_CERTIFICATE,
-    ) -> None:
+    ) -> tuple:
         is_request_valid, request_content, request_errors = makeRequest(
             verb, parameters=parameters
         )
