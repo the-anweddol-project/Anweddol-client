@@ -366,6 +366,10 @@ Send a request to the server.
 > Raised in this method if the client is not connected to the server.
 > ```
 
+```{note}
+For security reasons, a new AES IV will be generated and transmitted to the server.
+```
+
 ---
 
 ```{classmethod} recvResponse()
@@ -422,6 +426,10 @@ Receive a response from the server.
 > 
 > Raised in this method if the client is not connected to the server.
 > ```
+
+```{note}
+For security reasons, a new AES IV will be received from the server.
+```
 
 ### Undocumented methods
 

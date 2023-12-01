@@ -200,9 +200,8 @@ class ClientInterface:
 
         encrypted_packet = self.aes_wrapper.encryptData(json.dumps(request_content))
 
-        self.aes_wrapper.setKey(
-            self.aes_wrapper.getKey()[0]
-        )  # Will regenerate a new IV
+        # Will regenerate a new IV
+        self.aes_wrapper.setKey(self.aes_wrapper.getKey()[0])
         new_iv = self.aes_wrapper.getKey()[1]
 
         packet_length = str(len(encrypted_packet) + len(new_iv))
@@ -229,7 +228,7 @@ class ClientInterface:
         recv_packet = self.socket.recv(recv_packet_length)
         decrypted_recv_request = self.aes_wrapper.decryptData(recv_packet[:-16])
 
-        self.aes_wrapper.setKey(self.aes_wrapper.getKey()[0], recv_packet[16:])
+        self.aes_wrapper.setKey(self.aes_wrapper.getKey()[0], recv_packet[-16:])
 
         return verifyResponseContent(json.loads(decrypted_recv_request))
 
