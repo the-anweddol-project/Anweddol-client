@@ -14,6 +14,7 @@ from anwdlclient.core.client import ClientInterface
 SERVER_IP = "YOUR_SERVER_IP"
 
 with ClientInterface(SERVER_IP) as client:
+
 	print(f"Connecting to {SERVER_IP} ...")
 	client.connectServer()
 
