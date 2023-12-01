@@ -7,7 +7,10 @@ In this guide you will retrieve the contribution guidelines.
 
 ## Getting started
 
-In order to be able to bring new ideas and enhancements with ease, you can read the [Developer section]() and the [Technical specifications]() of the Anweddol client and server to know how it works.
+In order to be able to bring new ideas and enhancements with ease, you can read the developer section and the technical specifications of the Anweddol client and server to know how it works : 
+
+- Anweddol server : https://anweddol-server.readthedocs.io/en/latest/technical_specifications/index.html
+- Anweddol client : https://anweddol-client.readthedocs.io/en/latest/technical_specifications/index.html
 
 ## Issues
 

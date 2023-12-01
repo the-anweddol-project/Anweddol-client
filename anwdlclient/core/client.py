@@ -200,13 +200,18 @@ class ClientInterface:
 
         encrypted_packet = self.aes_wrapper.encryptData(json.dumps(request_content))
 
-        packet_length = str(len(encrypted_packet))
+        # Will regenerate a new IV
+        self.aes_wrapper.setKey(self.aes_wrapper.getKey()[0])
+        new_iv = self.aes_wrapper.getKey()[1]
+
+        packet_length = str(len(encrypted_packet) + len(new_iv))
+
         self.socket.sendall((packet_length + ("=" * (8 - len(packet_length)))).encode())
 
         if self.socket.recv(1).decode() != MESSAGE_OK:
             raise RuntimeError("Peer refused the packet")
 
-        self.socket.sendall(encrypted_packet)
+        self.socket.sendall(encrypted_packet + new_iv)
 
     def recvResponse(self) -> tuple:
         if self.isClosed():
@@ -216,15 +221,14 @@ class ClientInterface:
 
         if recv_packet_length <= 0:
             self.socket.sendall(MESSAGE_NOK.encode())
-            raise ValueError(
-                f"Received bad packet length : {recv_packet_length}"
-            )  # <----
+            raise ValueError(f"Received bad packet length : {recv_packet_length}")
 
         self.socket.sendall(MESSAGE_OK.encode())
 
-        decrypted_recv_request = self.aes_wrapper.decryptData(
-            self.socket.recv(recv_packet_length)
-        )
+        recv_packet = self.socket.recv(recv_packet_length)
+        decrypted_recv_request = self.aes_wrapper.decryptData(recv_packet[:-16])
+
+        self.aes_wrapper.setKey(self.aes_wrapper.getKey()[0], recv_packet[-16:])
 
         return verifyResponseContent(json.loads(decrypted_recv_request))
 
