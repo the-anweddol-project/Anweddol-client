@@ -12,7 +12,7 @@ from setuptools import setup
 import getpass
 import os
 
-VERSION = "3.1.1"
+VERSION = "4.1.1"
 
 
 def executeCommand(command):
