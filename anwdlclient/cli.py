@@ -145,6 +145,11 @@ please report it by opening an issue on the repository :
 
             exit(-1)
 
+    def _format_rsa_fingerprint(self, rsa_fingerprint):
+        return " ".join(
+            [rsa_fingerprint[i : i + 4] for i in range(0, len(rsa_fingerprint), 4)]
+        ).upper()
+
     def _load_rsa_keys(self):
         self.runtime_rsa_wrapper = None
 
@@ -233,6 +238,11 @@ please report it by opening an issue on the repository :
         parser.add_argument(
             "--do-not-store",
             help="do not store received credentials",
+            action="store_true",
+        )
+        parser.add_argument(
+            "--print-server-rsa-fingerprint",
+            help="display the remote server RSA fingerprint",
             action="store_true",
         )
         parser.add_argument(
@@ -336,6 +346,16 @@ please report it by opening an issue on the repository :
                 rsa_wrapper=self.runtime_rsa_wrapper,
             ) as client:
                 client.connectServer()
+
+                if args.print_server_rsa_fingerprint:
+                    server_rsa_fingerprint = hashlib.sha256(
+                        client.getRSAWrapper().getRemotePublicKey()
+                    ).hexdigest()
+
+                    self._log_stdout(
+                        f"Server RSA fingerprint : {self._format_rsa_fingerprint(server_rsa_fingerprint)}"
+                    )
+
                 client.sendRequest(
                     REQUEST_VERB_CREATE,
                     parameters=request_parameters,
@@ -499,6 +519,11 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
+            "--print-server-rsa-fingerprint",
+            help="display the remote server RSA fingerprint",
+            action="store_true",
+        )
+        parser.add_argument(
             "--do-not-delete",
             help="do not delete credentials on local storage",
             action="store_true",
@@ -596,6 +621,16 @@ please report it by opening an issue on the repository :
                     rsa_wrapper=self.runtime_rsa_wrapper,
                 ) as client:
                     client.connectServer()
+
+                    if args.print_server_rsa_fingerprint:
+                        server_rsa_fingerprint = hashlib.sha256(
+                            client.getRSAWrapper().getRemotePublicKey()
+                        ).hexdigest()
+
+                        self._log_stdout(
+                            f"Server RSA fingerprint : {self._format_rsa_fingerprint(server_rsa_fingerprint)}"
+                        )
+
                     client.sendRequest(
                         REQUEST_VERB_DESTROY,
                         parameters=request_parameters,
@@ -701,6 +736,11 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
+            "--print-server-rsa-fingerprint",
+            help="display the remote server RSA fingerprint",
+            action="store_true",
+        )
+        parser.add_argument(
             "--no-ssl-verification",
             help="do not verify the server SSL certificate (for self-signed ones)",
             action="store_true",
@@ -789,6 +829,16 @@ please report it by opening an issue on the repository :
                 rsa_wrapper=self.runtime_rsa_wrapper,
             ) as client:
                 client.connectServer()
+
+                if args.print_server_rsa_fingerprint:
+                    server_rsa_fingerprint = hashlib.sha256(
+                        client.getRSAWrapper().getRemotePublicKey()
+                    ).hexdigest()
+
+                    self._log_stdout(
+                        f"Server RSA fingerprint : {self._format_rsa_fingerprint(server_rsa_fingerprint)}"
+                    )
+
                 client.sendRequest(
                     REQUEST_VERB_STAT,
                     parameters=request_parameters,
