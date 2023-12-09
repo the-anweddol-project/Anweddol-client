@@ -241,8 +241,8 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
-            "--print-server-rsa-fingerprint",
-            help="display the remote server RSA fingerprint",
+            "--check-server-rsa-fingerprint",
+            help="check the remote server RSA fingerprint",
             action="store_true",
         )
         parser.add_argument(
@@ -347,7 +347,7 @@ please report it by opening an issue on the repository :
             ) as client:
                 client.connectServer()
 
-                if args.print_server_rsa_fingerprint:
+                if args.check_server_rsa_fingerprint:
                     server_rsa_fingerprint = hashlib.sha256(
                         client.getRSAWrapper().getRemotePublicKey()
                     ).hexdigest()
@@ -355,6 +355,13 @@ please report it by opening an issue on the repository :
                     self._log_stdout(
                         f"Server RSA fingerprint : {self._format_rsa_fingerprint(server_rsa_fingerprint)}"
                     )
+
+                    if input("Continue ? (y/n) : ") != "y":
+                        self._log_stdout("Aborting ...")
+
+                        client.closeConnection()
+
+                        return 0
 
                 client.sendRequest(
                     REQUEST_VERB_CREATE,
@@ -519,8 +526,8 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
-            "--print-server-rsa-fingerprint",
-            help="display the remote server RSA fingerprint",
+            "--check-server-rsa-fingerprint",
+            help="check the remote server RSA fingerprint",
             action="store_true",
         )
         parser.add_argument(
@@ -622,7 +629,7 @@ please report it by opening an issue on the repository :
                 ) as client:
                     client.connectServer()
 
-                    if args.print_server_rsa_fingerprint:
+                    if args.check_server_rsa_fingerprint:
                         server_rsa_fingerprint = hashlib.sha256(
                             client.getRSAWrapper().getRemotePublicKey()
                         ).hexdigest()
@@ -630,6 +637,13 @@ please report it by opening an issue on the repository :
                         self._log_stdout(
                             f"Server RSA fingerprint : {self._format_rsa_fingerprint(server_rsa_fingerprint)}"
                         )
+
+                        if input("Continue ? (y/n) : ") != "y":
+                            self._log_stdout("Aborting ...")
+
+                            client.closeConnection()
+
+                            return 0
 
                     client.sendRequest(
                         REQUEST_VERB_DESTROY,
@@ -736,8 +750,8 @@ please report it by opening an issue on the repository :
             action="store_true",
         )
         parser.add_argument(
-            "--print-server-rsa-fingerprint",
-            help="display the remote server RSA fingerprint",
+            "--check-server-rsa-fingerprint",
+            help="check the remote server RSA fingerprint",
             action="store_true",
         )
         parser.add_argument(
@@ -830,7 +844,7 @@ please report it by opening an issue on the repository :
             ) as client:
                 client.connectServer()
 
-                if args.print_server_rsa_fingerprint:
+                if args.check_server_rsa_fingerprint:
                     server_rsa_fingerprint = hashlib.sha256(
                         client.getRSAWrapper().getRemotePublicKey()
                     ).hexdigest()
@@ -838,6 +852,13 @@ please report it by opening an issue on the repository :
                     self._log_stdout(
                         f"Server RSA fingerprint : {self._format_rsa_fingerprint(server_rsa_fingerprint)}"
                     )
+
+                    if input("Continue ? (y/n) : ") != "y":
+                        self._log_stdout("Aborting ...")
+
+                        client.closeConnection()
+
+                        return 0
 
                 client.sendRequest(
                     REQUEST_VERB_STAT,
