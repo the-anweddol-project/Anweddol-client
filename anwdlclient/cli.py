@@ -9,8 +9,11 @@ This module contains the 'anwdlclient' CLI.
 
 from datetime import datetime
 from getpass import getpass
+from subprocess import Popen, PIPE
 import argparse
 import hashlib
+import random
+import string
 import json
 import sys
 import os
@@ -108,6 +111,8 @@ server interaction commands:
   create      create a container on a remote server
   destroy     destroy a created container on a remote server
   stat        get runtime statistics of a remote server
+  ssh-connect 
+              establish an SSH tunnel on a created container (not available on Windows)
 
 credentials and authentication management commands:
   session     manage stored session credentials
@@ -925,6 +930,120 @@ please report it by opening an issue on the repository :
             self._log_stdout(f"  Version : {version}")
             self._log_stdout(f"  Uptime : {uptime}")
             self._log_stdout(f"  Available containers : {available}")
+
+        return 0
+
+    def ssh_connect(self):
+        parser = argparse.ArgumentParser(
+            description="| Establish an SSH tunnel on a created container (not available on Windows)",
+            usage=f"{sys.argv[0]} ssh-connect <container_entry_id> ",
+        )
+        parser.add_argument(
+            "id", help="specify the container credentials ID to use", type=int
+        )
+        args = parser.parse_args(sys.argv[2:])
+
+        if os.name == "nt":
+            self._log_stdout(
+                "This feature is not available on Windows",
+                color=Colors.RED,
+                error=True,
+            )
+
+            return -1
+
+        if not os.path.exists("/bin/sshpass"):
+            self._log_stdout(
+                "sshpass wasn't found on system, make sure it is installed before using this feature",
+                color=Colors.RED,
+                error=True,
+            )
+
+            return -1
+
+        container_credentials_db_file_path = self.config_content.get(
+            "container_credentials_db_file_path"
+        )
+
+        if not os.path.exists(container_credentials_db_file_path):
+            createFileRecursively(container_credentials_db_file_path)
+
+        with ContainerCredentialsManager(
+            container_credentials_db_file_path
+        ) as container_credentials_manager:
+            credentials = container_credentials_manager.getEntry(args.id)
+
+            if not credentials:
+                container_credentials_manager.closeDatabase()
+                self._log_stdout(
+                    f"Container credentials entry ID '{args.id}' does not exists",
+                    color=Colors.RED,
+                    error=True,
+                )
+
+                return -1
+
+            (
+                _,
+                _,
+                server_ip,
+                _,
+                container_username,
+                container_password,
+                container_listen_port,
+            ) = credentials
+
+            tmp_file_path = (
+                f"/tmp/.{''.join(random.choices(string.ascii_lowercase, k=10))}"
+            )
+
+            with open(tmp_file_path, "w") as tmp_fd:
+                tmp_fd.write(container_password)
+
+            # Connect to the remote container domain and set the user password in a file
+            cmd = Popen(
+                [
+                    "/bin/sshpass",
+                    "-f",
+                    tmp_file_path,
+                    "ssh",
+                    "-t",
+                    "-oStrictHostKeyChecking=no",
+                    f"{container_username}@{server_ip}",
+                    "-p",
+                    str(container_listen_port),
+                    "echo",
+                    container_password,
+                    ">",
+                    "PASSWD.txt",
+                ],
+                stdout=PIPE,
+                stderr=PIPE,
+            )
+            result_out, _ = cmd.communicate()
+
+            if result_out.decode():
+                self._log_stdout(
+                    f"Error while connecting to remote container : {result_out}",
+                    color=Colors.RED,
+                    error=True,
+                )
+
+                return -1
+
+            self._log_stdout(
+                f"You can retrieve {container_username} password in the PASSWD.txt file, located in its home\n",
+            )
+
+            try:
+                os.system(
+                    f"/bin/sshpass -f {tmp_file_path} ssh -t -oStrictHostKeyChecking=no {container_username}@{server_ip} -p {container_listen_port}"
+                )
+
+            except Exception:
+                pass
+
+            os.remove(tmp_file_path)
 
         return 0
 
