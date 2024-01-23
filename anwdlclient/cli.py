@@ -9,8 +9,11 @@ This module contains the 'anwdlclient' CLI.
 
 from datetime import datetime
 from getpass import getpass
+from subprocess import Popen, PIPE
 import argparse
 import hashlib
+import random
+import string
 import json
 import sys
 import os
@@ -109,7 +112,7 @@ server interaction commands:
   destroy     destroy a created container on a remote server
   stat        get runtime statistics of a remote server
   ssh-connect 
-              establish an SSH tunnel on a created container
+              establish an SSH tunnel on a created container (not available on Windows)
 
 credentials and authentication management commands:
   session     manage stored session credentials
@@ -932,7 +935,7 @@ please report it by opening an issue on the repository :
 
     def ssh_connect(self):
         parser = argparse.ArgumentParser(
-            description="| Establish an SSH tunnel on a created container",
+            description="| Establish an SSH tunnel on a created container (not available on Windows)",
             usage=f"{sys.argv[0]} ssh-connect <container_entry_id> ",
         )
         parser.add_argument(
@@ -940,9 +943,18 @@ please report it by opening an issue on the repository :
         )
         args = parser.parse_args(sys.argv[2:])
 
+        if os.name == "nt":
+            self._log_stdout(
+                "This feature is not available on Windows",
+                color=Colors.RED,
+                error=True,
+            )
+
+            return -1
+
         if not os.path.exists("/bin/sshpass"):
             self._log_stdout(
-                "sshpass wasn't found on system, make sure it is installed before using this feature.",
+                "sshpass wasn't found on system, make sure it is installed before using this feature",
                 color=Colors.RED,
                 error=True,
             )
@@ -981,9 +993,57 @@ please report it by opening an issue on the repository :
                 container_listen_port,
             ) = credentials
 
-            os.system(
-                f"/bin/sshpass -p {container_password} ssh -t -oStrictHostKeyChecking=no {container_username}@{server_ip} -p {container_listen_port}"
+            tmp_file_path = (
+                f"/tmp/.{''.join(random.choices(string.ascii_lowercase, k=10))}"
             )
+
+            with open(tmp_file_path, "w") as tmp_fd:
+                tmp_fd.write(container_password)
+
+            # Connect to the remote container domain and set the user password in a file
+            cmd = Popen(
+                [
+                    "/bin/sshpass",
+                    "-f",
+                    tmp_file_path,
+                    "ssh",
+                    "-t",
+                    "-oStrictHostKeyChecking=no",
+                    f"{container_username}@{server_ip}",
+                    "-p",
+                    str(container_listen_port),
+                    "echo",
+                    container_password,
+                    ">",
+                    "PASSWD.txt",
+                ],
+                stdout=PIPE,
+                stderr=PIPE,
+            )
+            result_out, _ = cmd.communicate()
+
+            if result_out.decode():
+                self._log_stdout(
+                    f"Error while connecting to remote container : {result_out}",
+                    color=Colors.RED,
+                    error=True,
+                )
+
+                return -1
+
+            self._log_stdout(
+                f"You can retrieve {container_username} password in the PASSWD.txt file, located in its home\n",
+            )
+
+            try:
+                os.system(
+                    f"/bin/sshpass -f {tmp_file_path} ssh -t -oStrictHostKeyChecking=no {container_username}@{server_ip} -p {container_listen_port}"
+                )
+
+            except Exception:
+                pass
+
+            os.remove(tmp_file_path)
 
         return 0
 

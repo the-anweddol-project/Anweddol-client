@@ -52,6 +52,8 @@ Copy and paste the password, and you have now an SSH shell on the container.
 
 ```{note}
 Alternatively, you can execute `$ anwdlserver ssh-connect <entry_id>` to connect to the corresponding container SSH coordinates and credentials without having to display and copy them. Note that you need to install `sshpass` in order to use this feature.
+
+**Not available on Windows**
 ```
 
 ## Send a DESTROY request to a server
